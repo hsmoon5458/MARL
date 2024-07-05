@@ -1,5 +1,5 @@
-bazel-bin/
-bazel-MARL/
-bazel-out/
-bazel-testlogs/
+bazel-bin
+bazel-MARL
+bazel-out
+bazel-testlogs
 .vscode
