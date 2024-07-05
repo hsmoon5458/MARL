@@ -2,6 +2,7 @@
 #include "lib/agent.h"
 #include "lib/utils.h"
 #include "lib/SFML-2.5.1/include/SFML/Graphics.hpp"
+#include <torch/torch.h>
 
 #include <iostream>
 #include <string>

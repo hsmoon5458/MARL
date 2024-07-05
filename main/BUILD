@@ -8,5 +8,7 @@ cc_binary(
         "//lib:agent",
         "//lib:utils",
         "//lib/SFML-2.5.1:sfml_lib",
+        "//lib/libtorch:torch"
     ],
+    copts = ["-std=c++17"],
 )

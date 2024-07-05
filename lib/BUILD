@@ -11,7 +11,9 @@ cc_library(
 cc_library(
     name = "agent",
     hdrs = ["agent.h",],
-    deps = ["//lib/SFML-2.5.1:sfml_lib"],
+    deps = [
+        "//lib/SFML-2.5.1:sfml_lib",
+        ],
 )
 
 cc_library(
