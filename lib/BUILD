@@ -7,3 +7,15 @@ cc_library(
     hdrs = ["tile.h",],
     deps = ["//lib/SFML-2.5.1:sfml_lib"],
 )
+
+cc_library(
+    name = "agent",
+    hdrs = ["agent.h",],
+    deps = ["//lib/SFML-2.5.1:sfml_lib"],
+)
+
+cc_library(
+    name = "utils",
+    hdrs = ["utils.h",],
+    deps = ["//lib/SFML-2.5.1:sfml_lib"],
+)

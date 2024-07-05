@@ -5,6 +5,8 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         "//lib:tile",
+        "//lib:agent",
+        "//lib:utils",
         "//lib/SFML-2.5.1:sfml_lib",
     ],
 )
