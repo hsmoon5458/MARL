@@ -134,16 +134,17 @@ int main(int argc, char **argv)
 		std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
 
 		// Update display.
-		for (auto &agent : agent_vector)
-		{
-			window.draw(*agent->circle);
-		}
 		for (int row = 0; row < NUMBER_OF_TILES_PER_LINE; row++)
 		{
 			for (int each_tile = 0; each_tile < NUMBER_OF_TILES_PER_LINE; each_tile++)
 			{
 				window.draw(*tile_map.GetTile({row, each_tile}));
 			}
+		}
+		// Update agents display on top of tiles.
+		for (auto &agent : agent_vector)
+		{
+			window.draw(*agent->circle);
 		}
 
 		window.display();
