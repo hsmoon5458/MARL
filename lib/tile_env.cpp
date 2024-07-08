@@ -3,7 +3,7 @@
 namespace lib::tile_env
 {
     TileEnvironment::TileEnvironment(int display_width, int display_height, int state_size, int action_size,
-                                     std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor, int number_of_tile_per_line = 20)
+                                     std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor, int number_of_tile_per_line)
         : number_of_tile_per_line_(number_of_tile_per_line),
           state_size(state_size),
           action_size(action_size),
@@ -57,7 +57,7 @@ namespace lib::tile_env
         }
 
         reward_ = 0;
-    };
+    }
 
     std::vector<float> TileEnvironment::Reset()
     {
@@ -83,7 +83,7 @@ namespace lib::tile_env
 
         reward_ = 0.0f;
         return state;
-    };
+    }
 }
 
 // // XX, reward , done

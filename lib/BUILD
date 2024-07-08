@@ -5,12 +5,14 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "tile_env",
     hdrs = ["tile_env.h",],
+    srcs = ["tile_env.cpp",],
     deps = [
         "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
         ":utils",
         ":agent",
         ],
+    copts = ["-std=c++17"], # libtorch need c++17.
 )
 
 cc_library(
