@@ -4,11 +4,12 @@ cc_binary(
     name = "main",
     srcs = ["main.cc"],
     deps = [
-        "//lib:tile",
+        "//lib:tile_env",
         "//lib:agent",
         "//lib:utils",
         "//lib/SFML-2.5.1:sfml_lib",
-        "//lib/libtorch:torch"
+        "//lib/libtorch:torch",
+        "//lib:qnetwork",
     ],
     copts = ["-std=c++17"],
 )
