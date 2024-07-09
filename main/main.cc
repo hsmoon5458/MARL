@@ -13,7 +13,7 @@
 #include <thread>
 #include <deque>
 
-#define TIME_STEP_IN_MILLISECOND 100
+#define TIME_STEP_IN_MILLISECOND 10
 #define NUMBER_OF_TILES_PER_LINE 20
 #define MAX_AGENTS_NUMBER 7
 const sf::Color agent_colors[] = {
