@@ -13,7 +13,7 @@
 #include <thread>
 #include <deque>
 
-#define TIME_STEP_IN_MILLISECOND 1
+#define TIME_STEP_IN_MILLISECOND 100
 #define NUMBER_OF_TILES_PER_LINE 20
 #define MAX_AGENTS_NUMBER 7
 const sf::Color agent_colors[] = {
@@ -80,6 +80,8 @@ int main(int argc, char **argv)
 	// # of steps.
 	int number_of_step = 0;
 	int number_of_episode = 1;
+	const int max_previous_rewards_size = 100;
+	std::deque<float> previous_rewards;
 
 	// Start updating GUI.
 	while (window.isOpen())
@@ -104,6 +106,9 @@ int main(int argc, char **argv)
 		// Check all tiles are cleaned.
 		if (env->GetAllTilesCleaned())
 		{
+			previous_rewards.push_back(env->GetReward());
+			if (previous_rewards.size() > max_previous_rewards_size)
+				previous_rewards.pop_front();
 			env->Reset();
 			number_of_step = 0;
 			number_of_episode++;
@@ -119,7 +124,10 @@ int main(int argc, char **argv)
 		number_of_step++;
 
 		// Timestep interval.
-		std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+		if (TIME_STEP_IN_MILLISECOND != 0)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+		}
 
 		// Update display.
 		for (int row = 0; row < NUMBER_OF_TILES_PER_LINE; row++)

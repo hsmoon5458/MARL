@@ -36,11 +36,11 @@ namespace
 
 	enum AgentMovement
 	{
-		AGENT_HOLD,
 		AGENT_LEFT,
 		AGENT_RIGHT,
 		AGENT_UP,
 		AGENT_DOWN,
+		// AGENT_HOLD,
 	};
 
 	enum RewardPolicy
@@ -167,7 +167,7 @@ namespace lib::tile_env
 
 		std::vector<float> Reset();
 
-		int GetReward()
+		float GetReward()
 		{
 			return reward_;
 		}

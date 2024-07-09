@@ -90,8 +90,6 @@ namespace lib::tile_env
         std::pair<int, int> new_coor = GetAgentCurrentTileGridLocation(agent_index);
         switch (action)
         {
-        case AgentMovement::AGENT_HOLD:
-            break;
         case AgentMovement::AGENT_LEFT:
             new_coor.first--;
             break;
@@ -104,6 +102,8 @@ namespace lib::tile_env
         case AgentMovement::AGENT_DOWN:
             new_coor.second++;
             break;
+        // case AgentMovement::AGENT_HOLD:
+        //     break;
         default:
             LOG(ERROR) << "Unidentified agent action performed!";
             break;
@@ -138,17 +138,18 @@ namespace lib::tile_env
         // Check possible directions. Left(0), Right(1), Up(2), Down(3).
         std::vector<int> possible_directions;
 
-        possible_directions.push_back(0);
-
         if (location.first > 0)
-            possible_directions.push_back(1);
+            possible_directions.push_back(0);
         if (location.first < number_of_tile_per_line_ - 1)
-            possible_directions.push_back(2);
+            possible_directions.push_back(1);
         if (location.second > 0)
-            possible_directions.push_back(3);
+            possible_directions.push_back(2);
         if (location.second < number_of_tile_per_line_ - 1)
-            possible_directions.push_back(4);
-        // TODO: Check obstacles.
+            possible_directions.push_back(3);
+
+        // TOOD: Add HOLD as 4 if needed.
+
+        // TODO: Check obstacles, and
 
         // Generate a random number based on the possible pathways.
         int rand_num = generate_random_number(0, possible_directions.size() - 1);
