@@ -25,7 +25,12 @@ namespace
 	std::unordered_map<sf::Color, sf::Color, color_hash> color_tile_grid_for_cleaned_tile{
 		{sf::Color::Red, sf::Color(200, 0, 0, opacity)},
 		{sf::Color::Green, sf::Color(0, 200, 0, opacity)},
-		{sf::Color::Blue, sf::Color(0, 0, 200, opacity)}};
+		{sf::Color::Blue, sf::Color(0, 0, 200, opacity)},
+		{sf::Color::Cyan, sf::Color(0, 200, 200, opacity)},
+		{sf::Color::Magenta, sf::Color(90, 0, 90, opacity)},
+		{sf::Color::Yellow, sf::Color(200, 200, 0, opacity)},
+		{sf::Color::White, sf::Color(200, 200, 200, opacity)},
+	};
 }
 
 namespace lib::tile_env
@@ -103,6 +108,16 @@ namespace lib::tile_env
 					tile->setFillColor(sf::Color::Transparent);
 				}
 			}
+		}
+
+		bool AllTilesCleaned()
+		{
+			for (const auto &each_tile : cleaned_tile_grid_)
+			{
+				if (!each_tile.second)
+					return false;
+			}
+			return true;
 		}
 
 		void UpdateCleanedTile(const std::pair<int, int> &location, const sf::Color &color)

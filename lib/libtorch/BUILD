@@ -20,5 +20,5 @@ cc_library(
         "-lpython3.8",
 
         #"-L/lib/x86_64-linux-gnu/",
-    ]
+    ],
 )
