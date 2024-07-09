@@ -3,6 +3,8 @@
 #include "torch/torch.h"
 #include "qnetwork.h"
 #include "replay_buffer.h"
+
+#include <glog/logging.h>
 #include <memory>
 
 namespace

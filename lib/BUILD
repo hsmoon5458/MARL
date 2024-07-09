@@ -7,6 +7,7 @@ cc_library(
     hdrs = ["tile_env.h",],
     srcs = ["tile_env.cpp",],
     deps = [
+        "@com_github_google_glog//:glog",
         "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
         ":utils",
@@ -20,6 +21,7 @@ cc_library(
     hdrs = ["agent.h",],
     #srcs = ["agent.cpp"],
     deps = [
+        "@com_github_google_glog//:glog",
         "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
         ":qnetwork",

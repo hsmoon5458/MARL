@@ -3,6 +3,8 @@
 #include "lib/SFML-2.5.1/include/SFML/Graphics.hpp"
 #include "lib/agent.h"
 #include "lib/utils.h"
+
+#include <glog/logging.h>
 #include <map>
 #include <unordered_map>
 #include <stdexcept>
@@ -21,7 +23,7 @@ namespace
 	};
 
 	// TODO: Add more color for more agents.
-	// To distinguish agent and cleaned tile.
+	// To distinguish between agent and cleaned tile.
 	std::unordered_map<sf::Color, sf::Color, color_hash> color_tile_grid_for_cleaned_tile{
 		{sf::Color::Red, sf::Color(200, 0, 0, opacity)},
 		{sf::Color::Green, sf::Color(0, 200, 0, opacity)},
@@ -31,18 +33,35 @@ namespace
 		{sf::Color::Yellow, sf::Color(200, 200, 0, opacity)},
 		{sf::Color::White, sf::Color(200, 200, 200, opacity)},
 	};
+
+	enum AgentMovement
+	{
+		AGENT_HOLD,
+		AGENT_LEFT,
+		AGENT_RIGHT,
+		AGENT_UP,
+		AGENT_DOWN,
+	};
+
+	enum RewardPolicy
+	{
+		TILE_ALREADY_CLEANED,
+		TILE_NOT_CLEANED,
+		ALL_TILES_CLEANED,
+	};
 }
 
 namespace lib::tile_env
 {
 	class TileEnvironment
 	{
+		// TODO: Move public method to private if it not used in main function.
 	public:
 		int state_size;
 		int action_size;
 
-		TileEnvironment(int display_width, int display_height, int state_size, int action_size,
-						std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor, int number_of_tile_per_line = 20);
+		TileEnvironment(int display_width, int display_height, int state_size, int action_size, int number_of_tile_per_line,
+						std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor);
 
 		std::vector<std::vector<sf::RectangleShape *>> GetTileVector()
 		{
@@ -60,11 +79,12 @@ namespace lib::tile_env
 			return tile_grid_[location.first][location.second]->getPosition();
 		}
 
+		// Return coordinate of current agent's tile grid location (e.g. 13,4).
 		std::pair<int, int> GetAgentCurrentTileGridLocation(const int &index)
 		{
 			if (index >= agents_current_tile_grid_location_.size())
 			{
-				std::cout << "Agents index out of range of agents_current_tile_grid_location_!" << std::endl;
+				LOG(ERROR) << "Agents index out of range of agents_current_tile_grid_location_!";
 				exit(1);
 			}
 			return agents_current_tile_grid_location_[index];
@@ -79,7 +99,7 @@ namespace lib::tile_env
 		{
 			if (index >= agents_current_tile_grid_location_.size())
 			{
-				std::cout << "Agents index out of range of agents_current_tile_grid_location_!" << std::endl;
+				LOG(ERROR) << "Agents index out of range of agents_current_tile_grid_location_!";
 				exit(1);
 			}
 			agents_current_tile_grid_location_[index] = location;
@@ -89,7 +109,7 @@ namespace lib::tile_env
 		{
 			if (index >= circles.size())
 			{
-				std::cout << "Agents index out of range of circles!" << std::endl;
+				LOG(ERROR) << "Agents index out of range of circles!";
 				exit(1);
 			}
 			circles[index]->setPosition(location);
@@ -110,7 +130,7 @@ namespace lib::tile_env
 			}
 		}
 
-		bool AllTilesCleaned()
+		bool GetAllTilesCleaned()
 		{
 			for (const auto &each_tile : cleaned_tile_grid_)
 			{
@@ -133,12 +153,24 @@ namespace lib::tile_env
 			}
 			catch (const std::exception &e)
 			{
-				// print the exception
-				std::cout << "Exception " << e.what() << std::endl;
+				LOG(ERROR) << e.what();
 			}
 		}
 
+		// Generate random action that avoid boundaries and obstacles.
+		int GenerateAgentRandomMovement(const std::pair<int, int> location);
+
+		// Update tile_grid locaiton, pixel location, claned tile, and reward.
+		void PerformAgentAction(const int &agent_index, const int &action);
+
+		std::tuple<std::vector<float>, float, bool> Step(const int &agent_index, const int &action);
+
 		std::vector<float> Reset();
+
+		float GetReward()
+		{
+			return reward_;
+		}
 
 		~TileEnvironment()
 		{
@@ -166,5 +198,36 @@ namespace lib::tile_env
 		std::vector<std::pair<int, int>> agents_current_tile_grid_location_;
 
 		float reward_;
+
+		// Calculate the state based on the number of agent and tile grid setting.
+		std::vector<float> calculate_state()
+		{
+			std::vector<float> current_state;
+
+			// Append agents coordinate.
+			for (int agent_index = 0; agent_index < GetAgentsSize(); agent_index++)
+			{
+				current_state.push_back(agents_current_tile_grid_location_[agent_index].first);
+				current_state.push_back(agents_current_tile_grid_location_[agent_index].second);
+			}
+
+			// Append cleaned tile state (bool).
+			for (const auto &tile : cleaned_tile_grid_)
+			{
+				current_state.push_back(tile.second);
+			}
+
+			return current_state;
+		}
+
+		// <reward_category, reward_score>
+		std::map<int, float>
+			reward_policy_map = {
+				{RewardPolicy::TILE_ALREADY_CLEANED, -1},
+				{RewardPolicy::TILE_NOT_CLEANED, 1},
+				{RewardPolicy::ALL_TILES_CLEANED, 10}};
+
+		// Update the reward based on the agent's future coordinate and tile's cleaned state.
+		void update_reward(const std::pair<int, int> &coor);
 	};
 }

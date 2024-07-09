@@ -2,8 +2,8 @@
 
 namespace lib::tile_env
 {
-    TileEnvironment::TileEnvironment(int display_width, int display_height, int state_size, int action_size,
-                                     std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor, int number_of_tile_per_line)
+    TileEnvironment::TileEnvironment(int display_width, int display_height, int state_size, int action_size, int number_of_tile_per_line,
+                                     std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor)
         : number_of_tile_per_line_(number_of_tile_per_line),
           state_size(state_size),
           action_size(action_size),
@@ -41,7 +41,7 @@ namespace lib::tile_env
         int agents_size = agents.size();
         if (agents_size != initial_agents_coor.size())
         {
-            std::cout << "Initial Coordinate for agents and agent pointers size mismatch!" << std::endl;
+            LOG(ERROR) << "Initial Coordinate for agents and agent pointers size mismatch!";
             exit(1);
         }
 
@@ -84,17 +84,91 @@ namespace lib::tile_env
         reward_ = 0.0f;
         return state;
     }
-}
 
-// // XX, reward , done
-// std::tuple<std::vector<float>, float, bool> Step(Action action, int range)
-// {
-// 	lander.performAction(action);
-// 	leftLeg.updatePosition(lander.getBase().getPosition().x - 5.0f, lander.getBase().getPosition().y + 40.0f);
-// 	rightLeg.updatePosition(lander.getBase().getPosition().x + 55.0f, lander.getBase().getPosition().y + 40.0f);
-// 	world.Step(timeStep, 7, 2);
-// 	std::vector<float> new_state = calculateState();
-// 	Reward get_reward = reward;
-// 	bool done = episode_complete;
-// 	return std::make_tuple(new_state, get_reward, done);
-// }
+    void TileEnvironment::PerformAgentAction(const int &agent_index, const int &action)
+    {
+        std::pair<int, int> new_coor = GetAgentCurrentTileGridLocation(agent_index);
+        switch (action)
+        {
+        case AgentMovement::AGENT_HOLD:
+            break;
+        case AgentMovement::AGENT_LEFT:
+            new_coor.first--;
+            break;
+        case AgentMovement::AGENT_RIGHT:
+            new_coor.first++;
+            break;
+        case AgentMovement::AGENT_UP:
+            new_coor.second--;
+            break;
+        case AgentMovement::AGENT_DOWN:
+            new_coor.second++;
+            break;
+        default:
+            LOG(ERROR) << "Unidentified agent action performed!";
+            break;
+        }
+
+        update_reward(new_coor);
+
+        UpdateAgentTileGridLocation(agent_index, new_coor);
+        UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));
+        UpdateCleanedTile(new_coor, circles[agent_index]->getFillColor());
+    }
+
+    std::tuple<std::vector<float>, float, bool> TileEnvironment::Step(const int &agent_index, const int &action)
+    {
+        // Check all tiles are cleaned.
+        if (GetAllTilesCleaned())
+        {
+            reward_ += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
+        }
+
+        // Agent action and update the reward.
+        PerformAgentAction(agent_index, action);
+
+        // Update state, reward, and done state.
+        std::vector<float> new_state = calculate_state();
+
+        return std::make_tuple(new_state, reward_, GetAllTilesCleaned());
+    }
+
+    int TileEnvironment::GenerateAgentRandomMovement(const std::pair<int, int> location)
+    {
+        // Check possible directions. Left(0), Right(1), Up(2), Down(3).
+        std::vector<int> possible_directions;
+
+        possible_directions.push_back(0);
+
+        if (location.first > 0)
+            possible_directions.push_back(1);
+        if (location.first < number_of_tile_per_line_ - 1)
+            possible_directions.push_back(2);
+        if (location.second > 0)
+            possible_directions.push_back(3);
+        if (location.second < number_of_tile_per_line_ - 1)
+            possible_directions.push_back(4);
+        // TODO: Check obstacles.
+
+        // Generate a random number based on the possible pathways.
+        int rand_num = generate_random_number(0, possible_directions.size() - 1);
+        return possible_directions[rand_num];
+    };
+
+    void TileEnvironment::update_reward(const std::pair<int, int> &coor)
+    {
+        // If the tile is uncleaned,
+        if (!cleaned_tile_grid_[coor])
+        {
+            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED];
+        }
+
+        // If the tile is already cleaned,
+        else if (cleaned_tile_grid_[coor])
+        {
+            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED];
+        }
+
+        // TODO: Add more policy.
+    }
+}
