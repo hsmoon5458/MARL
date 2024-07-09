@@ -13,7 +13,7 @@
 #include <thread>
 #include <deque>
 
-#define TIME_STEP_IN_MILLISECOND 5
+#define TIME_STEP_IN_MILLISECOND 1
 #define NUMBER_OF_TILES_PER_LINE 20
 #define MAX_AGENTS_NUMBER 7
 const sf::Color agent_colors[] = {
@@ -32,12 +32,7 @@ int main(int argc, char **argv)
 	int display_height = sf::VideoMode::getDesktopMode().height;
 	sf::RenderWindow window(sf::VideoMode(display_width, display_height), "MALR Test Window", sf::Style::Default);
 
-	float reward = 0.0f; // Initialize the reward variable
-	bool episode_complete = false;
-	// float crashPenalty = -1.0f;		  // Penalty for crashing
-	// float landingReward = 1.0f;		  // Reward for landing between flag poles
-	// float closerToPolesReward = 0.1f; // Penalty for free falling
-	const int number_of_agent = 1;
+	const int number_of_agent = 4;
 	// State size is determined by # agents' coordinate + # of tile grids
 	const int state_size = number_of_agent * 2 + NUMBER_OF_TILES_PER_LINE * NUMBER_OF_TILES_PER_LINE;
 	const int action_size = 4;
@@ -64,14 +59,27 @@ int main(int argc, char **argv)
 		random_agents_location.push_back(random_agent_location);
 	}
 
-	// Instantiate environment.
+	// Instantiate environment and setup the color of each agent.
 	// TODO: Remove agents argument from env.
 	lib::tile_env::TileEnvironment *env = new lib::tile_env::TileEnvironment(display_width, display_height, state_size, action_size, NUMBER_OF_TILES_PER_LINE, agents, random_agents_location);
-
 	for (int i = 0; i < agents.size(); i++)
 	{
 		env->circles[i]->setFillColor(agent_colors[i]);
 	}
+
+	// Set text.
+	sf::Font font;
+	font.loadFromFile("/usr/share/fonts/truetype/freefont/FreeMono.ttf");
+	sf::Text info_text;
+	info_text.setFont(font);
+	info_text.setCharacterSize(40); // in pixel
+	info_text.setPosition({display_width - 1000.f, display_height - 600.f});
+	info_text.setFillColor(sf::Color::White);
+	info_text.setStyle(sf::Text::Style::Regular);
+
+	// # of steps.
+	int number_of_step = 0;
+	int number_of_episode = 1;
 
 	// Start updating GUI.
 	while (window.isOpen())
@@ -97,14 +105,18 @@ int main(int argc, char **argv)
 		if (env->GetAllTilesCleaned())
 		{
 			env->Reset();
+			number_of_step = 0;
+			number_of_episode++;
 		}
 
 		// Update agents' position.
 		for (int agent_index = 0; agent_index < env->GetAgentsSize(); agent_index++)
 		{
 			env->PerformAgentAction(agent_index,
-									env->GenerateAgentRandomMovement(env->GetAgentCurrentTileGridLocation(agent_index)));
+									env->GenerateAgentRandomAction(env->GetAgentCurrentTileGridLocation(agent_index)));
 		}
+
+		number_of_step++;
 
 		// Timestep interval.
 		std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
@@ -117,11 +129,19 @@ int main(int argc, char **argv)
 				window.draw(*env->GetTile({row, each_tile}));
 			}
 		}
+
 		// Update agents display on top of tiles.
 		for (auto circle : env->circles)
 		{
 			window.draw(*circle);
 		}
+
+		// Update info text.
+		info_text.setString("Number of Agent: " + std::to_string(env->GetAgentsSize()) +
+							"\nReward: " + std::to_string(env->GetReward()) +
+							"\nNumber of Step: " + std::to_string(number_of_step) +
+							"\nNumber of Episode: " + std::to_string(number_of_episode));
+		window.draw(info_text);
 
 		window.display();
 	}

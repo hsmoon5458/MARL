@@ -158,7 +158,7 @@ namespace lib::tile_env
 		}
 
 		// Generate random action that avoid boundaries and obstacles.
-		int GenerateAgentRandomMovement(const std::pair<int, int> location);
+		int GenerateAgentRandomAction(const std::pair<int, int> location);
 
 		// Update tile_grid locaiton, pixel location, claned tile, and reward.
 		void PerformAgentAction(const int &agent_index, const int &action);
@@ -167,7 +167,7 @@ namespace lib::tile_env
 
 		std::vector<float> Reset();
 
-		float GetReward()
+		int GetReward()
 		{
 			return reward_;
 		}
@@ -223,11 +223,11 @@ namespace lib::tile_env
 		// <reward_category, reward_score>
 		std::map<int, float>
 			reward_policy_map = {
-				{RewardPolicy::TILE_ALREADY_CLEANED, -1},
+				{RewardPolicy::TILE_ALREADY_CLEANED, -0.1},
 				{RewardPolicy::TILE_NOT_CLEANED, 1},
-				{RewardPolicy::ALL_TILES_CLEANED, 10}};
+				{RewardPolicy::ALL_TILES_CLEANED, 100}};
 
-		// Update the reward based on the agent's future coordinate and tile's cleaned state.
+		// Update the reward based on # of agent, agent's future coordinate, and tile's cleaned state.
 		void update_reward(const std::pair<int, int> &coor);
 	};
 }

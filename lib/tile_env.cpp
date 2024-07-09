@@ -81,7 +81,7 @@ namespace lib::tile_env
             state.push_back(agent_current_tile_grid_location_.second);
         }
 
-        reward_ = 0.0f;
+        reward_ = 0;
         return state;
     }
 
@@ -118,14 +118,14 @@ namespace lib::tile_env
 
     std::tuple<std::vector<float>, float, bool> TileEnvironment::Step(const int &agent_index, const int &action)
     {
+        // Agent action and update the reward.
+        PerformAgentAction(agent_index, action);
+
         // Check all tiles are cleaned.
         if (GetAllTilesCleaned())
         {
             reward_ += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
         }
-
-        // Agent action and update the reward.
-        PerformAgentAction(agent_index, action);
 
         // Update state, reward, and done state.
         std::vector<float> new_state = calculate_state();
@@ -133,7 +133,7 @@ namespace lib::tile_env
         return std::make_tuple(new_state, reward_, GetAllTilesCleaned());
     }
 
-    int TileEnvironment::GenerateAgentRandomMovement(const std::pair<int, int> location)
+    int TileEnvironment::GenerateAgentRandomAction(const std::pair<int, int> location)
     {
         // Check possible directions. Left(0), Right(1), Up(2), Down(3).
         std::vector<int> possible_directions;
@@ -153,20 +153,20 @@ namespace lib::tile_env
         // Generate a random number based on the possible pathways.
         int rand_num = generate_random_number(0, possible_directions.size() - 1);
         return possible_directions[rand_num];
-    };
+    }
 
     void TileEnvironment::update_reward(const std::pair<int, int> &coor)
     {
         // If the tile is uncleaned,
         if (!cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED];
+            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED] / GetAgentsSize();
         }
 
         // If the tile is already cleaned,
         else if (cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED];
+            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED] / GetAgentsSize();
         }
 
         // TODO: Add more policy.
