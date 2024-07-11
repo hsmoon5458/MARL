@@ -180,7 +180,7 @@ namespace lib::tile_env
 		int GenerateAgentRandomAction(const std::pair<int, int> location);
 
 		// Update all agents' tile_grid locaiton, pixel location, claned tile, and reward.
-		void PerformAgentAction(const std::vector<int> &actions);
+		void PerformAgentAction(const std::vector<int> &actions, float &reward);
 
 		std::tuple<std::vector<float>, float, bool> Step(const std::vector<int> &actions);
 
@@ -218,7 +218,7 @@ namespace lib::tile_env
 		// Agents
 		std::vector<std::pair<int, int>> agents_current_tile_grid_location_;
 
-		float reward_;
+		float total_reward_;
 
 		// Calculate the state based on the number of agent and tile grid setting.
 		std::vector<float> calculate_state()
@@ -254,7 +254,7 @@ namespace lib::tile_env
 				{RewardPolicy::TILE_NOT_CLEANED, 1},
 				{RewardPolicy::ALL_TILES_CLEANED, 100}};
 
-		// Update the reward based on # of agent, agent's future coordinate, and tile's cleaned state.
-		void update_reward(const std::pair<int, int> &coor);
+		// Get the reward based on coordinate and tile's cleaned state.
+		float GetRewardFromTileState(const std::pair<int, int> &coor);
 	};
 }

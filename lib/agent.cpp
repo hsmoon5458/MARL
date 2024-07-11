@@ -59,51 +59,42 @@ namespace lib::agent
         torch::Tensor action_values = qnetwork_local.forward(state_tensor);
         qnetwork_local.train();
 
+        // Check possible directions. Left(0), Right(1), Up(2), Down(3).
+        std::vector<int> possible_directions;
+        std::pair<int, int> coor = get_coor_from_state(state);
+
+        if (coor.first > 0)
+            possible_directions.push_back(0);
+        if (coor.first < number_of_tile_per_line_ - 1)
+            possible_directions.push_back(1);
+        if (coor.second > 0)
+            possible_directions.push_back(2);
+        if (coor.second < number_of_tile_per_line_ - 1)
+            possible_directions.push_back(3);
+        // TOOD: Add HOLD as 4 if needed.
+        // TODO: Check obstacles
+
         // Check if randomly generated number is greater than epsilon
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(0.0, 1.0);
-
-        // TODO: Update THIS!!
-        // if (dis(gen) > eps)
-        if (false)
+        if (generate_random_number(0.0, 1.0) > eps)
         {
-            // Convert the tensor to a C++ float array for finding the index of the maximum element
-            auto action_values_data = action_values.accessor<float, 3>(); // Assuming shape (1, 1, 5)
-            float max_value = action_values_data[0][0][0];                // Initialize with first value
-            int max_index = 0;
+            // Exploitation: choose the best action among possible directions
+            auto action_values_data = action_values.accessor<float, 3>();
+            float max_value = std::numeric_limits<float>::lowest();
+            int max_index = -1;
 
-            // Iterate through the tensor to find the maximum value and its index
-            for (int i = 0; i < action_size_; ++i)
+            for (int direction : possible_directions)
             {
-                if (action_values_data[0][0][i] > max_value)
+                if (action_values_data[0][0][direction] > max_value)
                 {
-                    max_value = action_values_data[0][0][i];
-                    max_index = i;
+                    max_value = action_values_data[0][0][direction];
+                    max_index = direction;
                 }
             }
-            // std::cout << "max_index: " << max_index << std::endl;
+
             return max_index;
         }
         else
         {
-            // Check possible directions. Left(0), Right(1), Up(2), Down(3).
-            std::vector<int> possible_directions;
-            std::pair<int, int> coor = get_coor_from_state(state);
-
-            if (coor.first > 0)
-                possible_directions.push_back(0);
-            if (coor.first < number_of_tile_per_line_ - 1)
-                possible_directions.push_back(1);
-            if (coor.second > 0)
-                possible_directions.push_back(2);
-            if (coor.second < number_of_tile_per_line_ - 1)
-                possible_directions.push_back(3);
-
-            // TOOD: Add HOLD as 4 if needed.
-
-            // TODO: Check obstacles, and
-
             // Generate a random number based on the possible pathways.
             int rand_num = generate_random_number(0, possible_directions.size() - 1);
             return possible_directions[rand_num];

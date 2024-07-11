@@ -69,7 +69,6 @@ int main(int argc, char **argv)
 	// Setup Agent and Environment.
 	const int number_of_agent = 4;
 	const int number_of_tile_per_line = 20;
-	// State size is determined by # agents' coordinate + # of tile grids
 	const int state_size = number_of_agent * 2 + number_of_tile_per_line * number_of_tile_per_line;
 	const int action_size = 4;
 	const int seed = 0;
@@ -90,7 +89,6 @@ int main(int argc, char **argv)
 	}
 
 	// Instantiate environment and setup the color of each agent.
-	// TODO: Remove agents argument from env.
 	lib::tile_env::TileEnvironment *env =
 		new lib::tile_env::TileEnvironment(state_size, action_size, agents_vector.size(), display_width, display_height);
 
@@ -138,7 +136,10 @@ int main(int argc, char **argv)
 				auto [next_state, reward, done] = env->Step(actions);
 
 				// TODO(hmoon): Implement this!
-				// agent.step(state, action, reward, next_state, done);
+				// for (int agent_index = 0; agent_index < number_of_agent; agent_index++) // In this for loop, state and eps are identical for all agents.
+				// {
+				// 		agent.step(state, action, reward, next_state, done);
+				// }
 
 				state = next_state;
 				total_reward += reward;

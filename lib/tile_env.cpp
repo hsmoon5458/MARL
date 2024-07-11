@@ -57,7 +57,7 @@ namespace lib::tile_env
             circles_.push_back(circle);
         }
 
-        reward_ = 0;
+        total_reward_ = 0;
     }
 
     std::vector<float> TileEnvironment::Reset()
@@ -82,11 +82,11 @@ namespace lib::tile_env
             state.push_back(agent_current_tile_grid_location_.second);
         }
 
-        reward_ = 0;
+        total_reward_ = 0;
         return state;
     }
 
-    void TileEnvironment::PerformAgentAction(const std::vector<int> &actions)
+    void TileEnvironment::PerformAgentAction(const std::vector<int> &actions, float &reward)
     {
         for (int agent_index = 0; agent_index < agent_size_; agent_index++)
         {
@@ -113,7 +113,9 @@ namespace lib::tile_env
                 break;
             }
 
-            update_reward(new_coor);
+            // Reward is updated on every agent since reward is based on
+            // 'cleaned_tile', so each action is corresponding to 'cleaned_tile'.
+            reward = GetRewardFromTileState(new_coor);
 
             UpdateAgentTileGridLocation(agent_index, new_coor);
             UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));
@@ -128,19 +130,22 @@ namespace lib::tile_env
             LOG(ERROR) << "actions size is not equal to agent_size!";
         }
 
-        // Execute all agents action and update the reward.
-        PerformAgentAction(actions);
+        // Execute all agents action and get the reward from the current step action.
+        float reward = 0;
+        PerformAgentAction(actions, reward);
 
         // Check all tiles are cleaned.
         if (GetAllTilesCleaned())
         {
-            reward_ += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
+            reward += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
         }
+
+        total_reward_ += reward;
 
         // Update state, reward, and done state.
         std::vector<float> new_state = calculate_state();
 
-        return std::make_tuple(new_state, reward_, GetAllTilesCleaned());
+        return std::make_tuple(new_state, reward, GetAllTilesCleaned());
     }
 
     int TileEnvironment::GenerateAgentRandomAction(const std::pair<int, int> location)
@@ -166,20 +171,22 @@ namespace lib::tile_env
         return possible_directions[rand_num];
     }
 
-    void TileEnvironment::update_reward(const std::pair<int, int> &coor)
+    float TileEnvironment::GetRewardFromTileState(const std::pair<int, int> &coor)
     {
         // If the tile is uncleaned,
         if (!cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED] / agent_size_;
+            return reward_policy_map[RewardPolicy::TILE_NOT_CLEANED];
         }
 
         // If the tile is already cleaned,
         else if (cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED] / agent_size_;
+            return reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED];
         }
 
         // TODO: Add more policy.
+
+        return 0;
     }
 }
