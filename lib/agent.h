@@ -73,5 +73,26 @@ namespace lib::agent
 
             return std::make_pair((int)state[id_ * 2], (int)state[id_ * 2 + 1]);
         }
+
+        // Return only possible actions. (e.g. do not give action to move beyond the boundaries)
+        std::vector<int> GetPossibleAction(std::vector<float> &state)
+        {
+            // Check possible directions. Left(0), Right(1), Up(2), Down(3).
+            std::vector<int> possible_directions;
+            std::pair<int, int> coor = get_coor_from_state(state);
+
+            if (coor.first > 0)
+                possible_directions.push_back(0);
+            if (coor.first < number_of_tile_per_line_ - 1)
+                possible_directions.push_back(1);
+            if (coor.second > 0)
+                possible_directions.push_back(2);
+            if (coor.second < number_of_tile_per_line_ - 1)
+                possible_directions.push_back(3);
+            // TOOD: Add HOLD as 4 if needed.
+            // TODO: Check obstacles
+
+            return possible_directions;
+        }
     };
 }

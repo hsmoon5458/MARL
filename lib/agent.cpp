@@ -59,20 +59,7 @@ namespace lib::agent
         torch::Tensor action_values = qnetwork_local.forward(state_tensor);
         qnetwork_local.train();
 
-        // Check possible directions. Left(0), Right(1), Up(2), Down(3).
-        std::vector<int> possible_directions;
-        std::pair<int, int> coor = get_coor_from_state(state);
-
-        if (coor.first > 0)
-            possible_directions.push_back(0);
-        if (coor.first < number_of_tile_per_line_ - 1)
-            possible_directions.push_back(1);
-        if (coor.second > 0)
-            possible_directions.push_back(2);
-        if (coor.second < number_of_tile_per_line_ - 1)
-            possible_directions.push_back(3);
-        // TOOD: Add HOLD as 4 if needed.
-        // TODO: Check obstacles
+        std::vector<int> possible_actions = GetPossibleAction(state);
 
         // Check if randomly generated number is greater than epsilon
         if (generate_random_number(0.0, 1.0) > eps)
@@ -82,12 +69,12 @@ namespace lib::agent
             float max_value = std::numeric_limits<float>::lowest();
             int max_index = -1;
 
-            for (int direction : possible_directions)
+            for (int possible_action : possible_actions)
             {
-                if (action_values_data[0][0][direction] > max_value)
+                if (action_values_data[0][0][possible_action] > max_value)
                 {
-                    max_value = action_values_data[0][0][direction];
-                    max_index = direction;
+                    max_value = action_values_data[0][0][possible_action];
+                    max_index = possible_action;
                 }
             }
 
@@ -96,8 +83,8 @@ namespace lib::agent
         else
         {
             // Generate a random number based on the possible pathways.
-            int rand_num = generate_random_number(0, possible_directions.size() - 1);
-            return possible_directions[rand_num];
+            int rand_num = generate_random_number(0, possible_actions.size() - 1);
+            return possible_actions[rand_num];
         }
     }
 
