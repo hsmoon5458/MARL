@@ -1,5 +1,6 @@
 #pragma once
 #include <random>
+#include <glog/logging.h>
 
 static int generate_random_number(const int &lower_bound, const int &upper_bound)
 {

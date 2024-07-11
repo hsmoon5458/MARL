@@ -2,23 +2,23 @@
 
 namespace lib::tile_env
 {
-    TileEnvironment::TileEnvironment(int display_width, int display_height, int state_size, int action_size, int number_of_tile_per_line,
-                                     std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor)
-        : number_of_tile_per_line_(number_of_tile_per_line),
-          state_size(state_size),
-          action_size(action_size),
-          agents_(agents)
+    TileEnvironment::TileEnvironment(int state_size, int action_size, int agent_size, int display_width, int display_height, int number_of_tile_per_line)
+        : state_size_(state_size),
+          action_size_(action_size),
+          agent_size_(agent_size),
+          number_of_tile_per_line_(number_of_tile_per_line)
     {
         // GUI tile gird setup.
         const float line_thickness = 2;
         const float tile_size = 100;
 
-        center_offset_ = {display_width / 2 - (tile_size * number_of_tile_per_line) / 2, display_height / 2 - (tile_size * number_of_tile_per_line) / 2};
+        center_offset_ = {display_width / 2 - (tile_size * number_of_tile_per_line_) / 2, display_height / 2 - (tile_size * number_of_tile_per_line_) / 2};
 
-        for (int i = 0; i < number_of_tile_per_line; i++)
+        // Update tile.
+        for (int i = 0; i < number_of_tile_per_line_; i++)
         {
             std::vector<sf::RectangleShape *> row;
-            for (int j = 0; j < number_of_tile_per_line; j++)
+            for (int j = 0; j < number_of_tile_per_line_; j++)
             {
                 sf::RectangleShape *tile = new sf::RectangleShape;
                 tile->setSize({tile_size, tile_size});
@@ -34,26 +34,27 @@ namespace lib::tile_env
             tile_grid_.push_back(row);
         }
 
+        // Update initial agent coors.
+        for (int i = 0; i < agent_size_; i++)
+        {
+            auto random_agent_location =
+                std::make_pair(generate_random_number(0, number_of_tile_per_line_ - 1),
+                               generate_random_number(0, number_of_tile_per_line_ - 1));
+            agents_current_tile_grid_location_.push_back(random_agent_location);
+        }
+
         // GUI Agents Setup.
         const float agent_outline_thickness = 1;
         float radius = 50;
 
-        int agents_size = agents.size();
-        if (agents_size != initial_agents_coor.size())
-        {
-            LOG(ERROR) << "Initial Coordinate for agents and agent pointers size mismatch!";
-            exit(1);
-        }
-
-        for (int i = 0; i < agents_size; i++)
+        for (int i = 0; i < agent_size_; i++)
         {
             auto circle = std::make_shared<sf::CircleShape>();
             circle->setRadius(radius);
-            circle->setPosition(GetTilePixelPosition(initial_agents_coor[i]));
+            circle->setPosition(GetTilePixelPosition(agents_current_tile_grid_location_[i]));
             circle->setOutlineColor(sf::Color::White);
             circle->setOutlineThickness(agent_outline_thickness);
-            agents_current_tile_grid_location_.push_back(initial_agents_coor[i]);
-            circles.push_back(circle);
+            circles_.push_back(circle);
         }
 
         reward_ = 0;
@@ -85,41 +86,50 @@ namespace lib::tile_env
         return state;
     }
 
-    void TileEnvironment::PerformAgentAction(const int &agent_index, const int &action)
+    void TileEnvironment::PerformAgentAction(const std::vector<int> &actions)
     {
-        std::pair<int, int> new_coor = GetAgentCurrentTileGridLocation(agent_index);
-        switch (action)
+        for (int agent_index = 0; agent_index < agent_size_; agent_index++)
         {
-        case AgentMovement::AGENT_LEFT:
-            new_coor.first--;
-            break;
-        case AgentMovement::AGENT_RIGHT:
-            new_coor.first++;
-            break;
-        case AgentMovement::AGENT_UP:
-            new_coor.second--;
-            break;
-        case AgentMovement::AGENT_DOWN:
-            new_coor.second++;
-            break;
-        // case AgentMovement::AGENT_HOLD:
-        //     break;
-        default:
-            LOG(ERROR) << "Unidentified agent action performed!";
-            break;
+            std::pair<int, int> new_coor = GetAgentCurrentTileGridLocation(agent_index);
+
+            switch (actions[agent_index])
+            {
+            case AgentMovement::AGENT_LEFT:
+                new_coor.first--;
+                break;
+            case AgentMovement::AGENT_RIGHT:
+                new_coor.first++;
+                break;
+            case AgentMovement::AGENT_UP:
+                new_coor.second--;
+                break;
+            case AgentMovement::AGENT_DOWN:
+                new_coor.second++;
+                break;
+            // case AgentMovement::AGENT_HOLD:
+            //     break;
+            default:
+                LOG(ERROR) << "Unidentified agent action performed!";
+                break;
+            }
+
+            update_reward(new_coor);
+
+            UpdateAgentTileGridLocation(agent_index, new_coor);
+            UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));
+            UpdateCleanedTile(new_coor, circles_[agent_index]->getFillColor());
         }
-
-        update_reward(new_coor);
-
-        UpdateAgentTileGridLocation(agent_index, new_coor);
-        UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));
-        UpdateCleanedTile(new_coor, circles[agent_index]->getFillColor());
     }
 
-    std::tuple<std::vector<float>, float, bool> TileEnvironment::Step(const int &agent_index, const int &action)
+    std::tuple<std::vector<float>, float, bool> TileEnvironment::Step(const std::vector<int> &actions)
     {
-        // Agent action and update the reward.
-        PerformAgentAction(agent_index, action);
+        if (actions.size() != agent_size_)
+        {
+            LOG(ERROR) << "actions size is not equal to agent_size!";
+        }
+
+        // Execute all agents action and update the reward.
+        PerformAgentAction(actions);
 
         // Check all tiles are cleaned.
         if (GetAllTilesCleaned())
@@ -161,13 +171,13 @@ namespace lib::tile_env
         // If the tile is uncleaned,
         if (!cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED] / GetAgentsSize();
+            reward_ += reward_policy_map[RewardPolicy::TILE_NOT_CLEANED] / agent_size_;
         }
 
         // If the tile is already cleaned,
         else if (cleaned_tile_grid_[coor])
         {
-            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED] / GetAgentsSize();
+            reward_ += reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED] / agent_size_;
         }
 
         // TODO: Add more policy.

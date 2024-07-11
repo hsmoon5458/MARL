@@ -11,6 +11,8 @@
 #include <iostream>
 #include <random>
 
+#define NUMBER_OF_TILES_PER_LINE 20
+
 namespace
 {
 	constexpr auto opacity = 120;
@@ -57,11 +59,7 @@ namespace lib::tile_env
 	{
 		// TODO: Move public method to private if it not used in main function.
 	public:
-		int state_size;
-		int action_size;
-
-		TileEnvironment(int display_width, int display_height, int state_size, int action_size, int number_of_tile_per_line,
-						std::vector<lib::agent::Agent *> agents, std::vector<std::pair<int, int>> initial_agents_coor);
+		TileEnvironment(int state_size, int action_size, int agent_size, int display_width, int display_height, int number_of_tile_per_line = NUMBER_OF_TILES_PER_LINE);
 
 		std::vector<std::vector<sf::RectangleShape *>> GetTileVector()
 		{
@@ -90,11 +88,6 @@ namespace lib::tile_env
 			return agents_current_tile_grid_location_[index];
 		}
 
-		int GetAgentsSize()
-		{
-			return agents_.size();
-		}
-
 		void UpdateAgentTileGridLocation(const int &index, const std::pair<int, int> &location)
 		{
 			if (index >= agents_current_tile_grid_location_.size())
@@ -102,17 +95,25 @@ namespace lib::tile_env
 				LOG(ERROR) << "Agents index out of range of agents_current_tile_grid_location_!";
 				exit(1);
 			}
+
+			if (location.first < 0 || location.first >= number_of_tile_per_line_ || location.second < 0 || location.second >= number_of_tile_per_line_)
+			{
+				LOG(ERROR) << "Location is out of tile boundary.";
+				exit(1);
+			}
+
 			agents_current_tile_grid_location_[index] = location;
 		}
 
 		void UpdateAgentPixelLocation(const int &index, const sf::Vector2f &location)
 		{
-			if (index >= circles.size())
+			if (index >= circles_.size())
 			{
 				LOG(ERROR) << "Agents index out of range of circles!";
 				exit(1);
 			}
-			circles[index]->setPosition(location);
+
+			circles_[index]->setPosition(location);
 		}
 
 		void ClearCleanedTileState()
@@ -157,20 +158,33 @@ namespace lib::tile_env
 			}
 		}
 
+		void RenderEnvironment(sf::RenderWindow *window)
+		{
+			// Update tiles.
+			for (int row = 0; row < number_of_tile_per_line_; row++)
+			{
+				for (int each_tile = 0; each_tile < number_of_tile_per_line_; each_tile++)
+				{
+					window->draw(*GetTile({row, each_tile}));
+				}
+			}
+
+			// Update agents on top of tiles.
+			for (auto circle : circles_)
+			{
+				window->draw(*circle);
+			}
+		}
+
 		// Generate random action that avoid boundaries and obstacles.
 		int GenerateAgentRandomAction(const std::pair<int, int> location);
 
-		// Update tile_grid locaiton, pixel location, claned tile, and reward.
-		void PerformAgentAction(const int &agent_index, const int &action);
+		// Update all agents' tile_grid locaiton, pixel location, claned tile, and reward.
+		void PerformAgentAction(const std::vector<int> &actions);
 
-		std::tuple<std::vector<float>, float, bool> Step(const int &agent_index, const int &action);
+		std::tuple<std::vector<float>, float, bool> Step(const std::vector<int> &actions);
 
 		std::vector<float> Reset();
-
-		float GetReward()
-		{
-			return reward_;
-		}
 
 		~TileEnvironment()
 		{
@@ -183,18 +197,25 @@ namespace lib::tile_env
 			}
 		}
 
-		// Make shared_ptr and public to easily modfiy the position.
-		std::vector<std::shared_ptr<sf::CircleShape>> circles;
+		// To update circles position.
+		std::vector<std::shared_ptr<sf::CircleShape>> GetCircles()
+		{
+			return circles_;
+		}
 
 	private:
+		int state_size_;
+		int action_size_;
+		int agent_size_;
+
 		// Tile gird
 		std::map<std::pair<int, int>, bool> cleaned_tile_grid_;
 		int number_of_tile_per_line_;
 		sf::Vector2f center_offset_;
 		std::vector<std::vector<sf::RectangleShape *>> tile_grid_;
+		std::vector<std::shared_ptr<sf::CircleShape>> circles_;
 
 		// Agents
-		std::vector<lib::agent::Agent *> agents_;
 		std::vector<std::pair<int, int>> agents_current_tile_grid_location_;
 
 		float reward_;
@@ -205,7 +226,7 @@ namespace lib::tile_env
 			std::vector<float> current_state;
 
 			// Append agents coordinate.
-			for (int agent_index = 0; agent_index < GetAgentsSize(); agent_index++)
+			for (int agent_index = 0; agent_index < agent_size_; agent_index++)
 			{
 				current_state.push_back(agents_current_tile_grid_location_[agent_index].first);
 				current_state.push_back(agents_current_tile_grid_location_[agent_index].second);
@@ -215,6 +236,12 @@ namespace lib::tile_env
 			for (const auto &tile : cleaned_tile_grid_)
 			{
 				current_state.push_back(tile.second);
+			}
+
+			if (current_state.size() != state_size_)
+			{
+				LOG(ERROR) << "State size mismatch!";
+				exit(1);
 			}
 
 			return current_state;

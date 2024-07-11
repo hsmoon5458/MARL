@@ -12,5 +12,12 @@ cc_binary(
         "//lib/libtorch:torch",
         "//lib:qnetwork",
     ],
-    copts = ["-std=c++17"], # libtorch need c++17.
+    copts = [
+        "-std=c++17", # libtorch need c++17.
+        "-pthread",
+    ],
+    linkopts = [
+        "-lX11",
+        "-pthread",
+        ],
 )

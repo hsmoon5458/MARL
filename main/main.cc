@@ -5,6 +5,7 @@
 #include "lib/qnetwork.h"
 
 #include <glog/logging.h>
+#include <X11/Xlib.h>
 #include <torch/torch.h>
 #include <iostream>
 #include <string>
@@ -14,8 +15,8 @@
 #include <deque>
 
 #define TIME_STEP_IN_MILLISECOND 10
-#define NUMBER_OF_TILES_PER_LINE 20
 #define MAX_AGENTS_NUMBER 7
+
 const sf::Color agent_colors[] = {
 	sf::Color::Red,
 	sf::Color::Green,
@@ -25,20 +26,55 @@ const sf::Color agent_colors[] = {
 	sf::Color::Yellow,
 	sf::Color::White};
 
+inline static sf::Text SetText(const sf::Font &font, const unsigned int &size, const float &x, const float &y, const sf::Color &color, const sf::Text::Style &style)
+{
+	sf::Text text;
+	text.setFont(font);
+	text.setCharacterSize(size); // in pixel
+	text.setPosition({x, y});
+	text.setFillColor(color);
+	text.setStyle(style);
+	return text;
+}
+
+inline void CheckEvent(sf::RenderWindow *window, sf::Event &event)
+{
+	while (true)
+	{
+		while (window->pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape)
+			{
+				window->close();
+				exit(0);
+			}
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
+	XInitThreads();
+
 	// Display size.
 	int display_width = sf::VideoMode::getDesktopMode().width;
 	int display_height = sf::VideoMode::getDesktopMode().height;
-	sf::RenderWindow window(sf::VideoMode(display_width, display_height), "MALR Test Window", sf::Style::Default);
+	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(display_width, display_height), "MALR Test Window", sf::Style::Default);
 
+	// Setup info text.
+	sf::Font font;
+	font.loadFromFile("/usr/share/fonts/truetype/freefont/FreeMono.ttf");
+	sf::Text info_text = SetText(font, 40, display_width - 1000.f, display_height - 600.f, sf::Color::White, sf::Text::Style::Regular);
+
+	// Setup Agent and Environment.
 	const int number_of_agent = 4;
+	const int number_of_tile_per_line = 20;
 	// State size is determined by # agents' coordinate + # of tile grids
-	const int state_size = number_of_agent * 2 + NUMBER_OF_TILES_PER_LINE * NUMBER_OF_TILES_PER_LINE;
+	const int state_size = number_of_agent * 2 + number_of_tile_per_line * number_of_tile_per_line;
 	const int action_size = 4;
+	const int seed = 0;
 
-	std::vector<lib::agent::Agent *> agents;
-	std::vector<std::pair<int, int>> random_agents_location;
+	std::vector<lib::agent::Agent *> agents_vector;
 
 	if (number_of_agent > MAX_AGENTS_NUMBER)
 	{
@@ -47,111 +83,88 @@ int main(int argc, char **argv)
 	}
 
 	// Instantiate agents.
-	for (int i = 0; i < number_of_agent; i++)
+	for (int id = 0; id < number_of_agent; id++)
 	{
-		auto random_agent_location =
-			std::make_pair(generate_random_number(0, NUMBER_OF_TILES_PER_LINE - 1),
-						   generate_random_number(0, NUMBER_OF_TILES_PER_LINE - 1));
-		auto *agent = new lib::agent::Agent(state_size, action_size, 0);
-
-		// TODO: Delete this vector at the end;
-		agents.push_back(agent);
-		random_agents_location.push_back(random_agent_location);
+		auto *agent = new lib::agent::Agent(id, number_of_tile_per_line, state_size, action_size, seed);
+		agents_vector.push_back(agent);
 	}
 
 	// Instantiate environment and setup the color of each agent.
 	// TODO: Remove agents argument from env.
-	lib::tile_env::TileEnvironment *env = new lib::tile_env::TileEnvironment(display_width, display_height, state_size, action_size, NUMBER_OF_TILES_PER_LINE, agents, random_agents_location);
-	for (int i = 0; i < agents.size(); i++)
+	lib::tile_env::TileEnvironment *env =
+		new lib::tile_env::TileEnvironment(state_size, action_size, agents_vector.size(), display_width, display_height);
+
+	// TODO: Move this into the Env class.
+	for (int i = 0; i < agents_vector.size(); i++)
 	{
-		env->circles[i]->setFillColor(agent_colors[i]);
+		env->GetCircles()[i]->setFillColor(agent_colors[i]);
 	}
 
-	// Set text.
-	sf::Font font;
-	font.loadFromFile("/usr/share/fonts/truetype/freefont/FreeMono.ttf");
-	sf::Text info_text;
-	info_text.setFont(font);
-	info_text.setCharacterSize(40); // in pixel
-	info_text.setPosition({display_width - 1000.f, display_height - 600.f});
-	info_text.setFillColor(sf::Color::White);
-	info_text.setStyle(sf::Text::Style::Regular);
+	const int n_episodes = 1000;
+	const int max_t = 4000;
+	const float eps_start = 1.0;
+	const float eps_end = 0.01;
+	const float eps_decay = 0.995;
 
-	// # of steps.
-	int number_of_step = 0;
-	int number_of_episode = 1;
-	const int max_previous_rewards_size = 100;
-	std::deque<float> previous_rewards;
+	// Check close event.
+	sf::Event event;
+	std::thread check_event_thread(CheckEvent, window, std::ref(event));
+	check_event_thread.detach();
 
-	// Start updating GUI.
-	while (window.isOpen())
+	// Start main loop of Window GUI.
+	while (window->isOpen())
 	{
-		// Clear before update the display for each frame.
-		window.clear();
+		// DQN
+		float eps = eps_start;
 
-		// Check close event.
-		sf::Event event;
-		while (window.pollEvent(event))
+		for (int i_episode = 1; i_episode <= n_episodes; ++i_episode)
 		{
-			if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape)
-				window.close();
+			// Reset the environment and fresh the state.
+			std::vector<float> state = env->Reset();
+			float total_reward = 0;
 
-			// Reset.
-			if (event.key.code == sf::Keyboard::R)
+			// Each episode, execute max_t actions.
+			for (int t = 0; t < max_t; ++t)
 			{
-				env->Reset();
+				// Get action from each agent for environment.
+				std::vector<int> actions;
+				for (int agent_index = 0; agent_index < number_of_agent; agent_index++) // In this for loop, state and eps are identical for all agents.
+				{
+					// Get what action to take from agent.
+					actions.push_back(agents_vector[agent_index]->Act(state, eps));
+				}
+
+				// Update environment (perform all agents action, update state and reward).
+				auto [next_state, reward, done] = env->Step(actions);
+
+				// TODO(hmoon): Implement this!
+				// agent.step(state, action, reward, next_state, done);
+
+				state = next_state;
+				total_reward += reward;
+
+				// Render environment.
+				window->clear();
+				env->RenderEnvironment(window);
+				// Update info text.
+				info_text.setString("Number of Agent: " + std::to_string(number_of_agent) +
+									"\nReward: " + std::to_string(total_reward) +
+									"\nEpisode: " + std::to_string(i_episode) +
+									"\nStep: " + std::to_string(t));
+				window->draw(info_text);
+
+				window->display();
+
+				// Timestep interval for visualiziing agents movment.
+				std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+
+				// Check all tiles are cleaned.
+				if (done)
+				{
+					break;
+				}
 			}
 		}
-
-		// Check all tiles are cleaned.
-		if (env->GetAllTilesCleaned())
-		{
-			previous_rewards.push_back(env->GetReward());
-			if (previous_rewards.size() > max_previous_rewards_size)
-				previous_rewards.pop_front();
-			env->Reset();
-			number_of_step = 0;
-			number_of_episode++;
-		}
-
-		// Update agents' position.
-		for (int agent_index = 0; agent_index < env->GetAgentsSize(); agent_index++)
-		{
-			env->PerformAgentAction(agent_index,
-									env->GenerateAgentRandomAction(env->GetAgentCurrentTileGridLocation(agent_index)));
-		}
-
-		number_of_step++;
-
-		// Timestep interval.
-		if (TIME_STEP_IN_MILLISECOND != 0)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
-		}
-
-		// Update display.
-		for (int row = 0; row < NUMBER_OF_TILES_PER_LINE; row++)
-		{
-			for (int each_tile = 0; each_tile < NUMBER_OF_TILES_PER_LINE; each_tile++)
-			{
-				window.draw(*env->GetTile({row, each_tile}));
-			}
-		}
-
-		// Update agents display on top of tiles.
-		for (auto circle : env->circles)
-		{
-			window.draw(*circle);
-		}
-
-		// Update info text.
-		info_text.setString("Number of Agent: " + std::to_string(env->GetAgentsSize()) +
-							"\nReward: " + std::to_string(env->GetReward()) +
-							"\nNumber of Step: " + std::to_string(number_of_step) +
-							"\nNumber of Episode: " + std::to_string(number_of_episode));
-		window.draw(info_text);
-
-		window.display();
 	}
 
 	// TODO: Delete all pointers.

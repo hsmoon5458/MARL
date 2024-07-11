@@ -3,6 +3,7 @@
 #include "torch/torch.h"
 #include "qnetwork.h"
 #include "replay_buffer.h"
+#include "lib/utils.h"
 
 #include <glog/logging.h>
 #include <memory>
@@ -26,13 +27,15 @@ namespace lib::agent
         QNetwork qnetwork_target;
         torch::optim::Adam optimizer;
 
-        Agent(int state_size, int action_size, int seed) : state_size_(state_size),
-                                                           action_size_(action_size),
-                                                           seed_(seed),
-                                                           qnetwork_local(state_size, action_size),
-                                                           qnetwork_target(state_size, action_size),
-                                                           memory_(action_size, BUFFER_SIZE, BATCH_SIZE, seed),
-                                                           optimizer(qnetwork_local.parameters(), torch::optim::AdamOptions(LEARNING_RATE))
+        Agent(int id, int number_of_tile_per_line, int state_size, int action_size, int seed) : id_(id),
+                                                                                                number_of_tile_per_line_(number_of_tile_per_line),
+                                                                                                state_size_(state_size),
+                                                                                                action_size_(action_size),
+                                                                                                seed_(seed),
+                                                                                                qnetwork_local(state_size, action_size),
+                                                                                                qnetwork_target(state_size, action_size),
+                                                                                                memory_(action_size, BUFFER_SIZE, BATCH_SIZE, seed),
+                                                                                                optimizer(qnetwork_local.parameters(), torch::optim::AdamOptions(LEARNING_RATE))
 
         {
             t_step_ = 0;
@@ -41,7 +44,7 @@ namespace lib::agent
         // void Step(std::vector<float> &state, int action, float reward,
         //           std::vector<float> &next_state, bool done);
 
-        // int Act(std::vector<float> &state, float eps = 0.0f);
+        int Act(std::vector<float> &state, float eps = 0.0f);
 
         // void Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> &experiences, float gamma);
 
@@ -53,5 +56,22 @@ namespace lib::agent
         int seed_;
         ReplayBuffer memory_;
         int t_step_;
+
+        int number_of_tile_per_line_;
+        int id_;
+        // To add the rule (do not select action that go outside of gird boundary),
+        // parse the current location from the state.
+        // Check calculate_state() in [tile_env.h] to get informed how state is defined.
+        inline std::pair<int, int> get_coor_from_state(const std::vector<float> &state)
+        {
+            // state = {agent_1_x, agent_1_y, agent_2_x, agent_2_y, ... agent_n_x, agent_n_y, tiles...}
+            if (id_ * 2 + 1 > state.size())
+            {
+                LOG(ERROR) << "State size is not matching with the agent size!";
+                exit(1);
+            }
+
+            return std::make_pair((int)state[id_ * 2], (int)state[id_ * 2 + 1]);
+        }
     };
 }
