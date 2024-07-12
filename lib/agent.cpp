@@ -62,15 +62,15 @@ namespace lib::agent
         if (generate_random_number(0.0, 1.0) > eps)
         {
             // Exploitation: choose the best action among possible directions
-            auto action_values_data = action_values.accessor<float, 3>();
+            auto action_values_data = action_values.accessor<float, 2>();
             float max_value = std::numeric_limits<float>::lowest();
             int max_index = -1;
 
             for (int possible_action : possible_actions)
             {
-                if (action_values_data[0][0][possible_action] > max_value)
+                if (action_values_data[0][possible_action] > max_value)
                 {
-                    max_value = action_values_data[0][0][possible_action];
+                    max_value = action_values_data[0][possible_action];
                     max_index = possible_action;
                 }
             }
@@ -94,57 +94,33 @@ namespace lib::agent
         auto &next_states = std::get<3>(experiences);
         auto &dones = std::get<4>(experiences);
 
-        // std::cout << "states: " << states << std::endl;
-
-        // std::cout << "states inside learn: " << states << std::endl;
-
         // Convert actions to a PyTorch tensor
-
-        // std::cout << "states: " << states << std::endl;
-        // std::cout << "next states: " << next_states << std::endl;
-
         torch::Tensor qValues = qnetwork_target.Forward(next_states);
 
-        // std::cout << "qValues: " << qValues << std::endl;
-
-        // // // // Detach the tensor to prevent gradient tracking if needed
+        // Detach the tensor to prevent gradient tracking if needed
         qValues = qValues.detach();
 
-        // // // // Find the maximum values along dimension 1
+        // Find the maximum values along dimension 1
         torch::Tensor max_values = std::get<0>(torch::max(qValues, 1));
 
-        // // // // Add a dimension of size 1 at position 1
+        // Add a dimension of size 1 at position 1
         torch::Tensor q_targets_next = max_values.unsqueeze(1);
 
-        // std::cout << "max_values_expanded: " << q_targets_next << std::endl;
-
-        // std::cout << "rewards: " << rewards << std::endl;
-
-        // std::cout << "dones: " << dones << std::endl;
-
-        // // // Calculate target value from Bellman equation
+        // Calculate target value from Bellman equation
         torch::Tensor q_targets = rewards + gamma * q_targets_next * (1 - dones);
 
-        // std::cout << "q_targets: " << q_targets << std::endl;
-
-        // // // Forward pass through the network (replace 'your_network' with your actual network)
+        // Forward pass through the network (replace 'your_network' with your actual network)
         torch::Tensor output = qnetwork_local.Forward(states); // Replace 'your_network' with your actual network
 
-        // // // // Perform the gather operation
+        // Perform the gather operation
         torch::Tensor q_expected;
 
-        // // // std::cout << "output: " << output << std::endl;
-        // // // std::cout << "actions: " << actions << std::endl;
         actions = actions.to(torch::kInt64);
 
-        // // // // Perform gather along dimension 1 using index 'actions'
+        // Perform gather along dimension 1 using index 'actions'
         q_expected = output.gather(1, actions);
 
-        // std::cout << "q_expected: " << q_expected << std::endl;
-
         auto loss = torch::mse_loss(q_expected, q_targets);
-
-        // std::cout << "Loss: " << loss.item<float>() << std::endl;
 
         optimizer.zero_grad();
         loss.backward();
@@ -156,7 +132,6 @@ namespace lib::agent
 
     void Agent::SoftUpdate(QNetwork &local_model, QNetwork &target_model, float tau)
     {
-        // std::cout << "Soft update" << std::endl;
         auto local_params = local_model.parameters();
         auto target_params = target_model.parameters();
 

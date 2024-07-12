@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 		env->GetCircles()[i]->setFillColor(agent_colors[i]);
 	}
 
-	const int n_episodes = 1000;
+	const int n_episodes = 100000;
 	const int max_t = 4000;
 	const float eps_start = 1.0;
 	const float eps_end = 0.01;
@@ -114,6 +114,12 @@ int main(int argc, char **argv)
 	check_event_thread.detach();
 
 	std::vector<float> total_reward_vector;
+	std::ofstream out_file("/home/hmoon/reward_log2.txt", std::ios::app);
+	if (!out_file)
+	{
+		LOG(ERROR) << "Unable to open file!";
+		return 1;
+	}
 	// Start main loop of Window GUI.
 	while (window->isOpen())
 	{
@@ -171,19 +177,8 @@ int main(int argc, char **argv)
 			}
 			LOG(INFO) << "Episode: " << i_episode << " Reward: " << total_reward;
 			total_reward_vector.push_back(total_reward);
+			out_file << total_reward << std::endl;
 		}
-	}
-
-	std::ofstream out_file("/home/hmoon/reward_log.txt");
-	if (!out_file)
-	{
-		LOG(ERROR) << "Unable to open file!";
-		return 1;
-	}
-
-	for (const auto &element : total_reward_vector)
-	{
-		out_file << element << "\n";
 	}
 
 	out_file.close();

@@ -59,7 +59,7 @@ public:
         std::iota(indices.begin(), indices.end(), 0); // Fill indices with 0, 1, ..., memory_.size()-1
 
         std::random_device rd;
-        std::mt19937 gen(rd());
+        std::mt19937 gen(seed != 0 ? seed : rd());
         std::shuffle(indices.begin(), indices.end(), gen); // Shuffle indices
 
         for (int i = 0; i < batch_size; ++i)

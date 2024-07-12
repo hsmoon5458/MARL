@@ -250,7 +250,7 @@ namespace lib::tile_env
 		// <reward_category, reward_score>
 		std::map<int, float>
 			reward_policy_map = {
-				{RewardPolicy::TILE_ALREADY_CLEANED, -0.1},
+				{RewardPolicy::TILE_ALREADY_CLEANED, -0.5},
 				{RewardPolicy::TILE_NOT_CLEANED, 1},
 				{RewardPolicy::ALL_TILES_CLEANED, 100}};
 
