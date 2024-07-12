@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	check_event_thread.detach();
 
 	std::vector<float> total_reward_vector;
-	std::ofstream out_file("/home/hmoon/reward_log2.txt", std::ios::app);
+	std::ofstream out_file("/home/hmoon/reward_log_1.txt", std::ios::app);
 	if (!out_file)
 	{
 		LOG(ERROR) << "Unable to open file!";

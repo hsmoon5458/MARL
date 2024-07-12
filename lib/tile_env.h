@@ -250,8 +250,8 @@ namespace lib::tile_env
 		// <reward_category, reward_score>
 		std::map<int, float>
 			reward_policy_map = {
-				{RewardPolicy::TILE_ALREADY_CLEANED, -0.5},
-				{RewardPolicy::TILE_NOT_CLEANED, 1},
+				{RewardPolicy::TILE_ALREADY_CLEANED, -0.2},
+				{RewardPolicy::TILE_NOT_CLEANED, 5},
 				{RewardPolicy::ALL_TILES_CLEANED, 100}};
 
 		// Get the reward based on coordinate and tile's cleaned state.

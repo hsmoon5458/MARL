@@ -29,8 +29,6 @@ namespace lib::agent
                     dones_int.push_back(done ? 1 : 0);
                 }
 
-                std::vector<long long> states_size = {static_cast<long long>(states.size()), static_cast<long long>(state_size_)};
-
                 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> experiences_tensors{
                     torch::from_blob(states.data(), {static_cast<long long>(states.size()), static_cast<long long>(state_size_)}).to(device_),
                     torch::from_blob(actions.data(), {static_cast<long long>(actions.size()), 1}).to(device_),
