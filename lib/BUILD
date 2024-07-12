@@ -49,4 +49,7 @@ cc_library(
 cc_library(
     name = "replay_buffer",
     hdrs = ["replay_buffer.h",],
+    deps = [
+        ":utils",
+        ],
 )

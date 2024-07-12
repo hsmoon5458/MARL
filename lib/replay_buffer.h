@@ -1,4 +1,7 @@
 #pragma once
+
+#include "lib/utils.h"
+
 #include <vector>
 #include <deque>
 #include <random>
@@ -35,13 +38,13 @@ public:
 
     void Add(std::vector<float> &state, int action, float reward, std::vector<float> &next_state, bool done)
     {
-        Experience e;
-        e.state = state;
-        e.action = action;
-        e.reward = reward;
-        e.next_state = next_state;
-        e.done = done;
-        memory_.push_back(e);
+        Experience experience;
+        experience.state = state;
+        experience.action = action;
+        experience.reward = reward;
+        experience.next_state = next_state;
+        experience.done = done;
+        memory_.push_back(experience);
     }
 
     std::tuple<std::vector<std::vector<float>>, std::vector<int>, std::vector<float>, std::vector<std::vector<float>>, std::vector<bool>> Sample()
@@ -67,13 +70,12 @@ public:
             rewards.push_back(memory_[index].reward);
             next_states.push_back(memory_[index].next_state);
             dones.push_back(memory_[index].done);
-            // std::cout << "index, i: " << index << ", " << i << std::endl;
         }
 
         return std::make_tuple(states, actions, rewards, next_states, dones);
     }
 
-    int GetLentgh()
+    int GetLength()
     {
         return memory_.size();
     }

@@ -8,6 +8,7 @@
 #include <X11/Xlib.h>
 #include <torch/torch.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -56,6 +57,9 @@ int main(int argc, char **argv)
 {
 	XInitThreads();
 
+	torch::Device device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+	LOG(INFO) << "Using device: " << (device.type() == torch::kCUDA ? "CUDA" : "CPU");
+
 	// Display size.
 	int display_width = sf::VideoMode::getDesktopMode().width;
 	int display_height = sf::VideoMode::getDesktopMode().height;
@@ -84,7 +88,7 @@ int main(int argc, char **argv)
 	// Instantiate agents.
 	for (int id = 0; id < number_of_agent; id++)
 	{
-		auto *agent = new lib::agent::Agent(id, number_of_tile_per_line, state_size, action_size, seed);
+		auto *agent = new lib::agent::Agent(id, number_of_tile_per_line, state_size, action_size, seed, device);
 		agents_vector.push_back(agent);
 	}
 
@@ -109,6 +113,7 @@ int main(int argc, char **argv)
 	std::thread check_event_thread(CheckEvent, window, std::ref(event));
 	check_event_thread.detach();
 
+	std::vector<float> total_reward_vector;
 	// Start main loop of Window GUI.
 	while (window->isOpen())
 	{
@@ -135,11 +140,10 @@ int main(int argc, char **argv)
 				// Update environment (perform all agents action, update state and reward).
 				auto [next_state, reward, done] = env->Step(actions);
 
-				// TODO(hmoon): Implement this!
-				// for (int agent_index = 0; agent_index < number_of_agent; agent_index++) // In this for loop, state and eps are identical for all agents.
-				// {
-				// 		agent.step(state, action, reward, next_state, done);
-				// }
+				for (int agent_index = 0; agent_index < number_of_agent; agent_index++) // In this for loop, state and eps are identical for all agents.
+				{
+					agents_vector[agent_index]->Step(state, actions[agent_index], reward, next_state, done);
+				}
 
 				state = next_state;
 				total_reward += reward;
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
 				window->display();
 
 				// Timestep interval for visualiziing agents movment.
-				std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+				// std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
 
 				// Check all tiles are cleaned.
 				if (done)
@@ -165,10 +169,23 @@ int main(int argc, char **argv)
 					break;
 				}
 			}
+			LOG(INFO) << "Episode: " << i_episode << " Reward: " << total_reward;
+			total_reward_vector.push_back(total_reward);
 		}
 	}
 
-	// TODO: Delete all pointers.
+	std::ofstream out_file("/home/hmoon/reward_log.txt");
+	if (!out_file)
+	{
+		LOG(ERROR) << "Unable to open file!";
+		return 1;
+	}
 
+	for (const auto &element : total_reward_vector)
+	{
+		out_file << element << "\n";
+	}
+
+	out_file.close();
 	return 0;
 }

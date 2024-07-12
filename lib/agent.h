@@ -27,33 +27,38 @@ namespace lib::agent
         QNetwork qnetwork_target;
         torch::optim::Adam optimizer;
 
-        Agent(int id, int number_of_tile_per_line, int state_size, int action_size, int seed) : id_(id),
-                                                                                                number_of_tile_per_line_(number_of_tile_per_line),
-                                                                                                state_size_(state_size),
-                                                                                                action_size_(action_size),
-                                                                                                seed_(seed),
-                                                                                                qnetwork_local(state_size, action_size),
-                                                                                                qnetwork_target(state_size, action_size),
-                                                                                                memory_(action_size, BUFFER_SIZE, BATCH_SIZE, seed),
-                                                                                                optimizer(qnetwork_local.parameters(), torch::optim::AdamOptions(LEARNING_RATE))
+        Agent(int id, int number_of_tile_per_line, int state_size, int action_size, int seed, torch::Device device) : id_(id),
+                                                                                                                      number_of_tile_per_line_(number_of_tile_per_line),
+                                                                                                                      state_size_(state_size),
+                                                                                                                      action_size_(action_size),
+                                                                                                                      seed_(seed),
+                                                                                                                      device_(device),
+                                                                                                                      qnetwork_local(state_size, action_size, device),
+                                                                                                                      qnetwork_target(state_size, action_size, device),
+                                                                                                                      memory_(action_size, BUFFER_SIZE, BATCH_SIZE, seed),
+                                                                                                                      optimizer(qnetwork_local.parameters(), torch::optim::AdamOptions(LEARNING_RATE))
 
         {
             t_step_ = 0;
+            device_ = device;
+            // qnetwork_local.to(device_);
+            // qnetwork_target.to(device_);
         }
 
-        // void Step(std::vector<float> &state, int action, float reward,
-        //           std::vector<float> &next_state, bool done);
+        void Step(std::vector<float> &state, int action, float reward,
+                  std::vector<float> &next_state, bool done);
 
         int Act(std::vector<float> &state, float eps = 0.0f);
 
-        // void Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> &experiences, float gamma);
+        void Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> &experiences, float gamma);
 
-        // void SoftUpdate(QNetwork &local_model, QNetwork &target_model, float tau);
+        void SoftUpdate(QNetwork &local_model, QNetwork &target_model, float tau);
 
     private:
         int state_size_;
         int action_size_;
         int seed_;
+        torch::Device device_;
         ReplayBuffer memory_;
         int t_step_;
 
