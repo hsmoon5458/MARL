@@ -18,6 +18,8 @@
 #define TIME_STEP_IN_MILLISECOND 10
 #define MAX_AGENTS_NUMBER 7
 
+bool is_O_on_ = true;
+
 const sf::Color agent_colors[] = {
     sf::Color::Red,     sf::Color::Green,  sf::Color::Blue, sf::Color::Cyan,
     sf::Color::Magenta, sf::Color::Yellow, sf::Color::White};
@@ -42,6 +44,11 @@ inline void CheckEvent(sf::RenderWindow *window, sf::Event &event) {
           event.key.code == sf::Keyboard::Escape) {
         window->close();
         exit(0);
+      }
+      if (event.type == sf::Event::KeyPressed &&
+          event.key.code == sf::Keyboard::O) {
+        // Invert.
+        is_O_on_ = !is_O_on_;
       }
     }
   }
@@ -68,9 +75,12 @@ int main(int argc, char **argv) {
   sf::Text info_text =
       SetText(font, 40, display_width - 1000.f, display_height - 600.f,
               sf::Color::White, sf::Text::Style::Regular);
+  sf::Text test_running =
+      SetText(font, 80, display_width / 2, display_height / 2, sf::Color::White,
+              sf::Text::Style::Bold);
 
   // Setup Agent and Environment.
-  const int number_of_agent = 1;
+  const int number_of_agent = 4;
   const int number_of_tile_per_line = 20;
   const int state_size =
       number_of_agent * 2 + number_of_tile_per_line * number_of_tile_per_line;
@@ -101,7 +111,7 @@ int main(int argc, char **argv) {
     env->GetCircles()[i]->setFillColor(agent_colors[i]);
   }
 
-  const int n_episodes = 100000;
+  const int n_episodes = 10000;
   const int max_t = 4000;
   const float eps_start = 1.0;
   const float eps_end = 0.01;
@@ -145,10 +155,9 @@ int main(int argc, char **argv) {
         // reward).
         auto [next_state, reward, done] = env->Step(actions);
 
+        // In this for loop, state and eps are identical for ll agents.
         for (int agent_index = 0; agent_index < number_of_agent;
-             agent_index++) // In this for loop, state and eps are identical for
-                            // all agents.
-        {
+             agent_index++) {
           agents_vector[agent_index]->Step(state, actions[agent_index], reward,
                                            next_state, done);
         }
@@ -157,16 +166,23 @@ int main(int argc, char **argv) {
         total_reward += reward;
 
         // Render environment.
-        window->clear();
-        env->RenderEnvironment(window);
-        // Update info text.
-        info_text.setString(
-            "Number of Agent: " + std::to_string(number_of_agent) +
-            "\nReward: " + std::to_string(total_reward) + "\nEpisode: " +
-            std::to_string(i_episode) + "\nStep: " + std::to_string(t));
-        window->draw(info_text);
+        if (is_O_on_) {
+          window->clear();
+          env->RenderEnvironment(window);
+          // Update info text.
+          info_text.setString(
+              "Number of Agent: " + std::to_string(number_of_agent) +
+              "\nReward: " + std::to_string(total_reward) + "\nEpisode: " +
+              std::to_string(i_episode) + "\nStep: " + std::to_string(t));
+          window->draw(info_text);
 
-        window->display();
+          window->display();
+        } else {
+          window->clear();
+          test_running.setString("Test RUNNING!");
+          window->draw(test_running);
+          window->display();
+        }
 
         // Timestep interval for visualiziing agents movment.
         // std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
@@ -175,6 +191,9 @@ int main(int argc, char **argv) {
         if (done) {
           break;
         }
+      }
+      for (int i = 0; i < number_of_agent; i++) {
+        out_file << agents_vector[i]->GetLoseValue() << " ";
       }
       LOG(INFO) << "Episode: " << i_episode << " Reward: " << total_reward;
       total_reward_vector.push_back(total_reward);

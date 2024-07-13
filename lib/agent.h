@@ -52,6 +52,8 @@ public:
 
   void SoftUpdate(QNetwork &local_model, QNetwork &target_model, float tau);
 
+  float GetLoseValue() { return lose_value_; }
+
 private:
   int state_size_;
   int action_size_;
@@ -59,6 +61,8 @@ private:
   torch::Device device_;
   ReplayBuffer memory_;
   int t_step_;
+
+  float lose_value_;
 
   int number_of_tile_per_line_;
   int id_;
