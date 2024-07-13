@@ -46,7 +46,7 @@ namespace lib::agent
     {
         // Convert state to a torch Tensor
         torch::Tensor state_tensor = torch::from_blob(state.data(), {1, state_size_}, torch::kFloat32).to(device_);
-        state_tensor.unsqueeze_(0);
+        // state_tensor.unsqueeze_(0);
 
         // Set Q-network to evaluation mode and get action values
         qnetwork_local.eval();
