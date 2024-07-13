@@ -18,8 +18,6 @@
 #define TIME_STEP_IN_MILLISECOND 10
 #define MAX_AGENTS_NUMBER 7
 
-bool is_O_on_ = true;
-
 const sf::Color agent_colors[] = {
     sf::Color::Red,     sf::Color::Green,  sf::Color::Blue, sf::Color::Cyan,
     sf::Color::Magenta, sf::Color::Yellow, sf::Color::White};
@@ -44,11 +42,6 @@ inline void CheckEvent(sf::RenderWindow *window, sf::Event &event) {
           event.key.code == sf::Keyboard::Escape) {
         window->close();
         exit(0);
-      }
-      if (event.type == sf::Event::KeyPressed &&
-          event.key.code == sf::Keyboard::O) {
-        // Invert.
-        is_O_on_ = !is_O_on_;
       }
     }
   }
@@ -166,23 +159,16 @@ int main(int argc, char **argv) {
         total_reward += reward;
 
         // Render environment.
-        if (is_O_on_) {
-          window->clear();
-          env->RenderEnvironment(window);
-          // Update info text.
-          info_text.setString(
-              "Number of Agent: " + std::to_string(number_of_agent) +
-              "\nReward: " + std::to_string(total_reward) + "\nEpisode: " +
-              std::to_string(i_episode) + "\nStep: " + std::to_string(t));
-          window->draw(info_text);
+        window->clear();
+        env->RenderEnvironment(window);
+        // Update info text.
+        info_text.setString(
+            "Number of Agent: " + std::to_string(number_of_agent) +
+            "\nReward: " + std::to_string(total_reward) + "\nEpisode: " +
+            std::to_string(i_episode) + "\nStep: " + std::to_string(t));
+        window->draw(info_text);
 
-          window->display();
-        } else {
-          window->clear();
-          test_running.setString("Test RUNNING!");
-          window->draw(test_running);
-          window->display();
-        }
+        window->display();
 
         // Timestep interval for visualiziing agents movment.
         // std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
