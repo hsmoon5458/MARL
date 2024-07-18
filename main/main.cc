@@ -230,6 +230,10 @@ int main(int argc, char **argv) {
           break;
         }
       }
+      render_util::ClearCleanedTileState(tile_grid);
+
+      eps = std::max(eps_end, eps_decay * eps);
+
       for (int i = 0; i < agent_size; i++) {
         out_file << agents_vector[i]->GetMSELossValue() << " ";
       }

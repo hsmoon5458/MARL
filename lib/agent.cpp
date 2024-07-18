@@ -56,7 +56,7 @@ int Agent::Act(std::vector<float> &state, float eps) {
   torch::Tensor state_tensor =
       torch::from_blob(state.data(), {1, state_size_}, torch::kFloat32)
           .to(device_);
-  state_tensor.unsqueeze_(0);
+  // state_tensor.unsqueeze_(0);
 
   // Set Q-network to evaluation mode and get action values
   qnetwork_local.eval();
@@ -67,13 +67,12 @@ int Agent::Act(std::vector<float> &state, float eps) {
   // Check if randomly generated number is greater than epsilon
   if (generate_random_number(0.0, 1.0) > eps) {
     // Exploitation: choose the best action among possible directions
-    auto action_values_data = action_values.accessor<float, 2>();
-    float max_value = std::numeric_limits<float>::lowest();
-    int max_index = -1;
+    float max_value = action_values.max().item<float>();
+    int max_index = 0;
 
     for (int i = 0; i < action_size_; i++) {
-      if (action_values_data[0][i] > max_value) {
-        max_value = action_values_data[0][i];
+      if (action_values[0][i].item<float>() > max_value) {
+        max_value = action_values[0][i].item<float>();
         max_index = i;
       }
     }

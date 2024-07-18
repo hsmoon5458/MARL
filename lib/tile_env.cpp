@@ -85,7 +85,8 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       break;
 
     default:
-      LOG(ERROR) << "Unidentified agent action performed!";
+      LOG(ERROR) << "Unidentified agent action performed: "
+                 << actions[agent_index];
       break;
     }
 
@@ -122,29 +123,6 @@ TileEnvironment::Step(const std::vector<int> &actions) {
   std::vector<float> new_state = calculate_state();
 
   return std::make_tuple(new_state, reward, IsAllTilesCleaned());
-}
-
-int TileEnvironment::GenerateAgentRandomAction(
-    const std::pair<int, int> location) {
-  // Check possible directions. Left(0), Right(1), Up(2), Down(3).
-  std::vector<int> possible_directions;
-
-  if (location.first > 0)
-    possible_directions.push_back(0);
-  if (location.first < number_of_tile_per_line_ - 1)
-    possible_directions.push_back(1);
-  if (location.second > 0)
-    possible_directions.push_back(2);
-  if (location.second < number_of_tile_per_line_ - 1)
-    possible_directions.push_back(3);
-
-  // TOOD: Add HOLD as 4 if needed.
-
-  // TODO: Check obstacles, and
-
-  // Generate a random number based on the possible pathways.
-  int rand_num = generate_random_number(0, possible_directions.size() - 1);
-  return possible_directions[rand_num];
 }
 
 float TileEnvironment::GetRewardFromTileState(const std::pair<int, int> &coor) {

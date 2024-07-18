@@ -92,9 +92,6 @@ public:
     return cleaned_tile_grid_;
   }
 
-  // Generate random action that avoid boundaries and obstacles.
-  int GenerateAgentRandomAction(const std::pair<int, int> location);
-
   // Update all agents' tile_grid locaiton, pixel location, claned tile, and
   // reward.
   void PerformAgentAction(const std::vector<int> &actions, float &reward);

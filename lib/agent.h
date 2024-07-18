@@ -44,7 +44,7 @@ public:
   void Step(std::vector<float> &state, int action, float reward,
             std::vector<float> &next_state, bool done);
 
-  int Act(std::vector<float> &state, float eps = 0.0f);
+  int Act(std::vector<float> &state, float eps);
 
   void Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
                         torch::Tensor, torch::Tensor> &experiences,
