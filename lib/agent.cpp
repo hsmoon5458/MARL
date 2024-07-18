@@ -64,8 +64,6 @@ int Agent::Act(std::vector<float> &state, float eps) {
   torch::Tensor action_values = qnetwork_local.Forward(state_tensor);
   qnetwork_local.train();
 
-  std::vector<int> possible_actions = GetPossibleAction(state);
-
   // Check if randomly generated number is greater than epsilon
   if (generate_random_number(0.0, 1.0) > eps) {
     // Exploitation: choose the best action among possible directions
@@ -73,18 +71,18 @@ int Agent::Act(std::vector<float> &state, float eps) {
     float max_value = std::numeric_limits<float>::lowest();
     int max_index = -1;
 
-    for (int possible_action : possible_actions) {
-      if (action_values_data[0][possible_action] > max_value) {
-        max_value = action_values_data[0][possible_action];
-        max_index = possible_action;
+    for (int i = 0; i < action_size_; i++) {
+      if (action_values_data[0][i] > max_value) {
+        max_value = action_values_data[0][i];
+        max_index = i;
       }
     }
 
     return max_index;
   } else {
     // Generate a random number based on the possible pathways.
-    int rand_num = generate_random_number(0, possible_actions.size() - 1);
-    return possible_actions[rand_num];
+    int rand_num = generate_random_number(0, action_size_ - 1);
+    return rand_num;
   }
 }
 

@@ -86,19 +86,39 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
 
     switch (actions[agent_index]) {
     case AgentMovement::AGENT_LEFT:
-      new_coor.first--;
+      if (CheckBoundaries({new_coor.first - 1, new_coor.second})) {
+        new_coor.first--;
+      }
+      // If out of boundaries, give large penalty and don't move.
+      else {
+        reward -= 5;
+      }
+
       break;
     case AgentMovement::AGENT_RIGHT:
-      new_coor.first++;
+      if (CheckBoundaries({new_coor.first + 1, new_coor.second})) {
+        new_coor.first++;
+      } else {
+        reward -= 5;
+      }
+
       break;
     case AgentMovement::AGENT_UP:
-      new_coor.second--;
+      if (CheckBoundaries({new_coor.first, new_coor.second - 1})) {
+        new_coor.second--;
+      } else {
+        reward -= 5;
+      }
+
       break;
     case AgentMovement::AGENT_DOWN:
-      new_coor.second++;
+      if (CheckBoundaries({new_coor.first, new_coor.second + 1})) {
+        new_coor.second++;
+      } else {
+        reward -= 5;
+      }
       break;
-    // case AgentMovement::AGENT_HOLD:
-    //     break;
+
     default:
       LOG(ERROR) << "Unidentified agent action performed!";
       break;

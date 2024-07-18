@@ -98,6 +98,16 @@ public:
     agents_current_tile_grid_location_[index] = location;
   }
 
+  // Return false if the coordinate is out of boundaries.
+  bool CheckBoundaries(const std::pair<int, int> coor) {
+    if (coor.first < 0 || coor.second < 0 ||
+        coor.first >= number_of_tile_per_line_ ||
+        coor.second >= number_of_tile_per_line_) {
+      return false;
+    }
+    return true;
+  }
+
   void UpdateAgentPixelLocation(const int &index,
                                 const sf::Vector2f &location) {
     if (index >= circles_.size()) {
@@ -228,7 +238,7 @@ private:
   std::map<int, float> reward_policy_map = {
       {RewardPolicy::TILE_ALREADY_CLEANED, -1},
       {RewardPolicy::TILE_NOT_CLEANED, 1},
-      {RewardPolicy::ALL_TILES_CLEANED, 1}};
+      {RewardPolicy::ALL_TILES_CLEANED, 5}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);

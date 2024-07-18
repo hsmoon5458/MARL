@@ -171,8 +171,8 @@ int main(int argc, char **argv) {
         window->display();
 
         // Timestep interval for visualiziing agents movment.
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+        // std::this_thread::sleep_for(
+        //     std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
 
         // Check all tiles are cleaned.
         if (done) {
