@@ -18,7 +18,7 @@
 #include <vector>
 
 #define TIME_STEP_IN_MILLISECOND 10
-#define MAX_AGENTS_NUMBER 4
+#define MAX_AGENT_SIZE 4
 
 inline void CheckEvent(sf::RenderWindow *window, sf::Event &event) {
   while (true) {
@@ -33,6 +33,10 @@ inline void CheckEvent(sf::RenderWindow *window, sf::Event &event) {
 }
 
 int main(int argc, char **argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging(argv[0]);
+
   XInitThreads();
 
   torch::Device device(torch::cuda::is_available() ? torch::kCUDA
@@ -50,7 +54,7 @@ int main(int argc, char **argv) {
 
   std::vector<lib::agent::Agent *> agents_vector;
 
-  if (agent_size > MAX_AGENTS_NUMBER) {
+  if (agent_size > MAX_AGENT_SIZE) {
     LOG(ERROR) << "Number of agents exceed the limit!";
     exit(1);
   }
