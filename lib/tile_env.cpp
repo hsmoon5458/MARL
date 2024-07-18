@@ -37,10 +37,7 @@ TileEnvironment::TileEnvironment(int state_size, int action_size,
 
   // Update initial agent coors.
   for (int i = 0; i < agent_size_; i++) {
-    auto random_agent_location =
-        std::make_pair(generate_random_number(0, number_of_tile_per_line_ - 1),
-                       generate_random_number(0, number_of_tile_per_line_ - 1));
-    agents_current_tile_grid_location_.push_back(random_agent_location);
+    agents_current_tile_grid_location_.push_back(agent_initial_coors_[i]);
   }
 
   // GUI Agents Setup.
@@ -65,12 +62,8 @@ std::vector<float> TileEnvironment::Reset() {
 
   // Reset agents location.
   for (int i = 0; i < agents_current_tile_grid_location_.size(); i++) {
-    auto new_coor =
-        std::make_pair(generate_random_number(0, number_of_tile_per_line_ - 1),
-                       generate_random_number(0, number_of_tile_per_line_ - 1));
-
-    UpdateAgentTileGridLocation(i, new_coor);
-    UpdateAgentPixelLocation(i, GetTilePixelPosition(new_coor));
+    UpdateAgentTileGridLocation(i, agent_initial_coors_[i]);
+    UpdateAgentPixelLocation(i, GetTilePixelPosition(agent_initial_coors_[i]));
   }
 
   // Reset the stat, state size will be determined by the number of agents times
@@ -114,6 +107,8 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
     // Reward is updated on every agent since reward is based on
     // 'cleaned_tile', so each action is corresponding to 'cleaned_tile'.
     reward = GetRewardFromTileState(new_coor);
+    const auto time_penalty = -0.1;
+    reward += time_penalty;
 
     UpdateAgentTileGridLocation(agent_index, new_coor);
     UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));

@@ -16,7 +16,7 @@
 #include <vector>
 
 #define TIME_STEP_IN_MILLISECOND 10
-#define MAX_AGENTS_NUMBER 7
+#define MAX_AGENTS_NUMBER 4
 
 const sf::Color agent_colors[] = {
     sf::Color::Red,     sf::Color::Green,  sf::Color::Blue, sf::Color::Cyan,
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
               sf::Text::Style::Bold);
 
   // Setup Agent and Environment.
-  const int number_of_agent = 4;
+  const int number_of_agent = 1;
   const int number_of_tile_per_line = 20;
   const int state_size =
       number_of_agent * 2 + number_of_tile_per_line * number_of_tile_per_line;
@@ -104,8 +104,8 @@ int main(int argc, char **argv) {
     env->GetCircles()[i]->setFillColor(agent_colors[i]);
   }
 
-  const int n_episodes = 10000;
-  const int max_t = 4000;
+  const int n_episodes = 1000;
+  const int max_t = 5000;
   const float eps_start = 1.0;
   const float eps_end = 0.01;
   const float eps_decay = 0.995;
@@ -171,7 +171,8 @@ int main(int argc, char **argv) {
         window->display();
 
         // Timestep interval for visualiziing agents movment.
-        // std::this_thread::sleep_for(std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(TIME_STEP_IN_MILLISECOND));
 
         // Check all tiles are cleaned.
         if (done) {
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
         }
       }
       for (int i = 0; i < number_of_agent; i++) {
-        out_file << agents_vector[i]->GetLoseValue() << " ";
+        out_file << agents_vector[i]->GetMSELossValue() << " ";
       }
       LOG(INFO) << "Episode: " << i_episode << " Reward: " << total_reward;
       total_reward_vector.push_back(total_reward);

@@ -46,8 +46,6 @@ void Agent::Step(std::vector<float> &state, int action, float reward,
                                {static_cast<long long>(dones_int.size()), 1})
                   .to(device_)};
 
-      // std::cout << "experiences_tensors: " <<
-      // std::get<1>(experiences_tensors).sizes() << std::endl;
       Learn(experiences_tensors, GAMMA);
     }
   }
@@ -130,10 +128,13 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
 
   auto loss = torch::mse_loss(q_expected, q_targets);
 
-  lose_value_ = loss.item<float>();
+  loss_value_ = 0;
+  loss_value_ = loss.item<float>();
 
   optimizer.zero_grad();
   loss.backward();
+
+  // torch::nn::utils::clip_grad_norm_(qnetwork_local.parameters(), 1.0);
   optimizer.step();
 
   // Update target network

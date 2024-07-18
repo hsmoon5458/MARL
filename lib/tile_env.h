@@ -226,11 +226,19 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_ALREADY_CLEANED, -0.2},
-      {RewardPolicy::TILE_NOT_CLEANED, 5},
-      {RewardPolicy::ALL_TILES_CLEANED, 100}};
+      {RewardPolicy::TILE_ALREADY_CLEANED, -1},
+      {RewardPolicy::TILE_NOT_CLEANED, 1},
+      {RewardPolicy::ALL_TILES_CLEANED, 1}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);
+
+  // Agents initial coordinates.
+  std::map<int, std::pair<int, int>> agent_initial_coors_{
+      {0, {0, 0}},
+      {1, {number_of_tile_per_line_ - 1, 0}},
+      {2, {0, number_of_tile_per_line_ - 1}},
+      {3, {number_of_tile_per_line_, number_of_tile_per_line_ - 1}},
+  };
 };
 } // namespace lib::tile_env

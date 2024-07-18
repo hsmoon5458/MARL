@@ -9,12 +9,12 @@
 #include <memory>
 
 namespace {
-constexpr float BUFFER_SIZE = int(1e5); // replay buffer size
-constexpr int BATCH_SIZE = 64;          // minibatch size
-constexpr float GAMMA = 0.99;           // discount factor
-constexpr float TAU = 1e-3;             // for soft update of target parameters
-constexpr float LEARNING_RATE = 5e-4;   // learning rate
-constexpr int UPDATE_EVERY = 4;         // how often to update the network
+constexpr float BUFFER_SIZE = int(1e5);  // replay buffer size
+constexpr int BATCH_SIZE = 64;           // minibatch size
+constexpr float GAMMA = 0.99;            // discount factor
+constexpr float TAU = 1e-3;              // for soft update of target parameters
+constexpr float LEARNING_RATE = 0.00005; // learning rate
+constexpr int UPDATE_EVERY = 4;          // how often to update the network
 } // namespace
 
 namespace lib::agent {
@@ -52,7 +52,7 @@ public:
 
   void SoftUpdate(QNetwork &local_model, QNetwork &target_model, float tau);
 
-  float GetLoseValue() { return lose_value_; }
+  float GetMSELossValue() { return loss_value_; }
 
 private:
   int state_size_;
@@ -62,7 +62,7 @@ private:
   ReplayBuffer memory_;
   int t_step_;
 
-  float lose_value_;
+  float loss_value_;
 
   int number_of_tile_per_line_;
   int id_;
