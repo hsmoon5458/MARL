@@ -2,56 +2,22 @@
 
 namespace lib::tile_env {
 TileEnvironment::TileEnvironment(int state_size, int action_size,
-                                 int agent_size, int display_width,
-                                 int display_height,
-                                 int number_of_tile_per_line)
+                                 int agent_size, int number_of_tile_per_line)
     : state_size_(state_size), action_size_(action_size),
       agent_size_(agent_size),
       number_of_tile_per_line_(number_of_tile_per_line) {
-  // GUI tile gird setup.
-  const float line_thickness = 2;
-  const float tile_size = 100;
-
-  center_offset_ = {
-      display_width / 2 - (tile_size * number_of_tile_per_line_) / 2,
-      display_height / 2 - (tile_size * number_of_tile_per_line_) / 2};
 
   // Update tile.
   for (int i = 0; i < number_of_tile_per_line_; i++) {
-    std::vector<sf::RectangleShape *> row;
     for (int j = 0; j < number_of_tile_per_line_; j++) {
-      sf::RectangleShape *tile = new sf::RectangleShape;
-      tile->setSize({tile_size, tile_size});
-      tile->setOutlineThickness(line_thickness);
-      tile->setOutlineColor(sf::Color::White);
-      tile->setFillColor(sf::Color::Transparent);
-      tile->setPosition({(tile_size + line_thickness) * i + center_offset_.x,
-                         (tile_size + line_thickness) * j + center_offset_.y});
-      row.push_back(tile);
-
       // Setup the cleaned_map.
       cleaned_tile_grid_[std::make_pair(i, j)];
     }
-    tile_grid_.push_back(row);
   }
 
   // Update initial agent coors.
   for (int i = 0; i < agent_size_; i++) {
     agents_current_tile_grid_location_.push_back(agent_initial_coors_[i]);
-  }
-
-  // GUI Agents Setup.
-  const float agent_outline_thickness = 1;
-  float radius = 50;
-
-  for (int i = 0; i < agent_size_; i++) {
-    auto circle = std::make_shared<sf::CircleShape>();
-    circle->setRadius(radius);
-    circle->setPosition(
-        GetTilePixelPosition(agents_current_tile_grid_location_[i]));
-    circle->setOutlineColor(sf::Color::White);
-    circle->setOutlineThickness(agent_outline_thickness);
-    circles_.push_back(circle);
   }
 
   total_reward_ = 0;
@@ -62,8 +28,7 @@ std::vector<float> TileEnvironment::Reset() {
 
   // Reset agents location.
   for (int i = 0; i < agents_current_tile_grid_location_.size(); i++) {
-    UpdateAgentTileGridLocation(i, agent_initial_coors_[i]);
-    UpdateAgentPixelLocation(i, GetTilePixelPosition(agent_initial_coors_[i]));
+    SetAgentTileGridLocation(i, agent_initial_coors_[i]);
   }
 
   // Reset the stat, state size will be determined by the number of agents times
@@ -127,12 +92,12 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
     // Reward is updated on every agent since reward is based on
     // 'cleaned_tile', so each action is corresponding to 'cleaned_tile'.
     reward = GetRewardFromTileState(new_coor);
+    // TODO: Add this to RewardPolicy.
     const auto time_penalty = -0.1;
     reward += time_penalty;
 
-    UpdateAgentTileGridLocation(agent_index, new_coor);
-    UpdateAgentPixelLocation(agent_index, GetTilePixelPosition(new_coor));
-    UpdateCleanedTile(new_coor, circles_[agent_index]->getFillColor());
+    SetAgentTileGridLocation(agent_index, new_coor);
+    SetCleanedTile(new_coor);
   }
 }
 
@@ -147,7 +112,7 @@ TileEnvironment::Step(const std::vector<int> &actions) {
   PerformAgentAction(actions, reward);
 
   // Check all tiles are cleaned.
-  if (GetAllTilesCleaned()) {
+  if (IsAllTilesCleaned()) {
     reward += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
   }
 
@@ -156,7 +121,7 @@ TileEnvironment::Step(const std::vector<int> &actions) {
   // Update state, reward, and done state.
   std::vector<float> new_state = calculate_state();
 
-  return std::make_tuple(new_state, reward, GetAllTilesCleaned());
+  return std::make_tuple(new_state, reward, IsAllTilesCleaned());
 }
 
 int TileEnvironment::GenerateAgentRandomAction(

@@ -7,7 +7,6 @@ cc_library(
     hdrs = ["tile_env.h",],
     srcs = ["tile_env.cpp",],
     deps = [
-        "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
         ":utils",
         ":agent",
@@ -20,13 +19,21 @@ cc_library(
     hdrs = ["agent.h",],
     srcs = ["agent.cpp"],
     deps = [
-        "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
         ":utils",
         ":qnetwork",
         ":replay_buffer",
         ],
     copts = ["-std=c++17"],
+)
+
+cc_library(
+    name = "render_util",
+    hdrs = ["render_util.h",],
+    deps = [
+        "@com_github_google_glog//:glog",
+        "//lib/SFML-2.5.1:sfml_lib",
+        ],
 )
 
 cc_library(

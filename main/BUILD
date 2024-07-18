@@ -5,8 +5,10 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         "@com_github_google_glog//:glog",
+        "@com_github_gflags_gflags//:gflags",
         "//lib:tile_env",
         "//lib:agent",
+        "//lib:render_util",
         "//lib:utils",
         "//lib/SFML-2.5.1:sfml_lib",
         "//lib/libtorch:torch",
