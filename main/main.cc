@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 
   // Setup Agent and Environment.
   const int number_of_agent = 1;
-  const int number_of_tile_per_line = 20;
+  const int number_of_tile_per_line = 10;
   const int state_size =
       number_of_agent * 2 + number_of_tile_per_line * number_of_tile_per_line;
   const int action_size = 4;
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   }
 
   const int n_episodes = 1000;
-  const int max_t = 5000;
+  const int max_t = 10000;
   const float eps_start = 1.0;
   const float eps_end = 0.01;
   const float eps_decay = 0.995;

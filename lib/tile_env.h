@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#define NUMBER_OF_TILES_PER_LINE 20
+#define NUMBER_OF_TILES_PER_LINE 10
 
 namespace {
 constexpr auto opacity = 120;
@@ -236,7 +236,7 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_ALREADY_CLEANED, -1},
+      {RewardPolicy::TILE_ALREADY_CLEANED, -0.5},
       {RewardPolicy::TILE_NOT_CLEANED, 1},
       {RewardPolicy::ALL_TILES_CLEANED, 5}};
 

@@ -132,7 +132,7 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   optimizer.zero_grad();
   loss.backward();
 
-  // torch::nn::utils::clip_grad_norm_(qnetwork_local.parameters(), 1.0);
+  torch::nn::utils::clip_grad_norm_(qnetwork_local.parameters(), 1.0);
   optimizer.step();
 
   // Update target network
