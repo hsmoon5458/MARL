@@ -21,3 +21,11 @@ cc_binary(
         "-pthread",
         ],
 )
+
+cc_binary(
+    name = "temp",
+    srcs = ["temp.cc"],
+    deps = [
+        "@com_github_google_glog//:glog",
+    ],
+)
