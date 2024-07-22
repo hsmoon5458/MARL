@@ -2,9 +2,10 @@
 
 namespace lib::tile_env {
 TileEnvironment::TileEnvironment(int state_size, int action_size,
-                                 int agent_size, int number_of_tile_per_line)
+                                 int agent_size, int max_step,
+                                 int number_of_tile_per_line)
     : state_size_(state_size), action_size_(action_size),
-      agent_size_(agent_size),
+      agent_size_(agent_size), max_step_(max_step),
       number_of_tile_per_line_(number_of_tile_per_line) {
 
   // Update tile.
@@ -94,7 +95,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
     // 'cleaned_tile', so each action is corresponding to 'cleaned_tile'.
     reward = GetRewardFromTileState(new_coor);
     // TODO: Add this to RewardPolicy.
-    const auto time_penalty = -0.1;
+    const auto time_penalty = -1;
     reward += time_penalty;
 
     SetAgentTileGridLocation(agent_index, new_coor);
@@ -103,18 +104,28 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
 }
 
 std::tuple<std::vector<float>, float, bool>
-TileEnvironment::Step(const std::vector<int> &actions) {
+TileEnvironment::Step(const std::vector<int> &actions,
+                      const int &current_step) {
   if (actions.size() != agent_size_) {
     LOG(ERROR) << "actions size is not equal to agent_size!";
   }
 
   // Execute all agents action and get the reward from the current step action.
   float reward = 0;
+  bool done = false;
+
   PerformAgentAction(actions, reward);
+
+  // If it reaches the max step, give large negative reward.
+  if (current_step == max_step_ - 1 && !IsAllTilesCleaned()) {
+    reward += -10;
+    done = true;
+  }
 
   // Check all tiles are cleaned.
   if (IsAllTilesCleaned()) {
     reward += reward_policy_map[RewardPolicy::ALL_TILES_CLEANED];
+    done = true;
   }
 
   total_reward_ += reward;
@@ -122,7 +133,7 @@ TileEnvironment::Step(const std::vector<int> &actions) {
   // Update state, reward, and done state.
   std::vector<float> new_state = calculate_state();
 
-  return std::make_tuple(new_state, reward, IsAllTilesCleaned());
+  return std::make_tuple(new_state, reward, done);
 }
 
 float TileEnvironment::GetRewardFromTileState(const std::pair<int, int> &coor) {

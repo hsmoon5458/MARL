@@ -48,7 +48,8 @@ int main(int argc, char **argv) {
   const int agent_size = 1;
   const int number_of_tile_per_line = 10;
   const int state_size =
-      agent_size * 2 + number_of_tile_per_line * number_of_tile_per_line;
+      agent_size * 2 + 1; // agent coordinates and all cleaned state (+1).
+  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 3;
   const int action_size = 4;
   const int seed = 0;
 
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
 
   // Instantiate environment.
   lib::tile_env::TileEnvironment *env = new lib::tile_env::TileEnvironment(
-      state_size, action_size, agent_size, number_of_tile_per_line);
+      state_size, action_size, agent_size, max_step, number_of_tile_per_line);
 
   // Display size.
   int display_width =
@@ -155,7 +156,6 @@ int main(int argc, char **argv) {
   }
 
   const int n_episodes = 1000;
-  const int max_t = 10000;
   const float eps_start = 1.0;
   const float eps_end = 0.01;
   const float eps_decay = 0.995;
@@ -176,9 +176,9 @@ int main(int argc, char **argv) {
       // Reset the environment and fresh the state.
       std::vector<float> state = env->Reset();
       float total_reward = 0;
-
+      int step = 0;
       // Each episode, execute max_t actions.
-      for (int t = 0; t < max_t; ++t) {
+      while (true) {
         // Get action from each agent for environment.
         std::vector<int> actions;
         // In this for loop, state and eps are identical for
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 
         // Update environment (perform all agents action, update state and
         // reward).
-        auto [next_state, reward, done] = env->Step(actions);
+        auto [next_state, reward, done] = env->Step(actions, step);
 
         // In this for loop, state and eps are identical for ll agents.
         for (int agent_index = 0; agent_index < agent_size; agent_index++) {
@@ -220,16 +220,19 @@ int main(int argc, char **argv) {
         info_text.setString("Number of Agent: " + std::to_string(agent_size) +
                             "\nReward: " + std::to_string(total_reward) +
                             "\nEpisode: " + std::to_string(i_episode) +
-                            "\nStep: " + std::to_string(t));
+                            "\nStep: " + std::to_string(step));
         window->draw(info_text);
         window->display();
 
-        // Check all tiles are cleaned.
+        // Check all tiles are cleaned or reached max step.
         if (done) {
           render_util::ClearCleanedTileState(tile_grid);
           break;
         }
+
+        step++;
       }
+
       render_util::ClearCleanedTileState(tile_grid);
 
       eps = std::max(eps_end, eps_decay * eps);

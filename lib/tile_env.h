@@ -30,7 +30,7 @@ namespace lib::tile_env {
 class TileEnvironment {
   // TODO: Move public method to private if it not used in main function.
 public:
-  TileEnvironment(int state_size, int action_size, int agent_size,
+  TileEnvironment(int state_size, int action_size, int agent_size, int max_step,
                   int number_of_tile_per_line);
 
   // Return coordinate of current agent's tile grid location (e.g. 13,4).
@@ -97,7 +97,7 @@ public:
   void PerformAgentAction(const std::vector<int> &actions, float &reward);
 
   std::tuple<std::vector<float>, float, bool>
-  Step(const std::vector<int> &actions);
+  Step(const std::vector<int> &actions, const int &current_step);
 
   std::vector<float> Reset();
 
@@ -107,6 +107,7 @@ private:
   int state_size_;
   int action_size_;
   int agent_size_;
+  int max_step_;
 
   // Tile gird
   std::map<std::pair<int, int>, bool> cleaned_tile_grid_;
@@ -129,13 +130,13 @@ private:
           agents_current_tile_grid_location_[agent_index].second);
     }
 
-    // Append cleaned tile state (bool).
-    for (const auto &tile : cleaned_tile_grid_) {
-      current_state.push_back(tile.second);
-    }
+    // Append cleaned state (bool).
+    current_state.push_back(IsAllTilesCleaned());
 
     if (current_state.size() != state_size_) {
-      LOG(ERROR) << "State size mismatch!";
+      LOG(ERROR) << "State size mismatch:" << current_state.size() << " "
+                 << state_size_;
+
       exit(1);
     }
 
@@ -144,9 +145,9 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_ALREADY_CLEANED, -0.5},
-      {RewardPolicy::TILE_NOT_CLEANED, 1},
-      {RewardPolicy::ALL_TILES_CLEANED, 5}};
+      {RewardPolicy::TILE_ALREADY_CLEANED, -3},
+      {RewardPolicy::TILE_NOT_CLEANED, 5},
+      {RewardPolicy::ALL_TILES_CLEANED, 10}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);
