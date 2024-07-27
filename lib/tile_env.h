@@ -130,8 +130,10 @@ private:
           agents_current_tile_grid_location_[agent_index].second);
     }
 
-    // Append cleaned state (bool).
-    current_state.push_back(IsAllTilesCleaned());
+    // Append cleaned state of each tile.
+    for (const auto &tile : cleaned_tile_grid_) {
+      current_state.push_back(tile.second ? 1.0f : 0.0f);
+    }
 
     if (current_state.size() != state_size_) {
       LOG(ERROR) << "State size mismatch:" << current_state.size() << " "
@@ -145,9 +147,8 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_ALREADY_CLEANED, -3},
-      {RewardPolicy::TILE_NOT_CLEANED, 5},
-      {RewardPolicy::ALL_TILES_CLEANED, 10}};
+      {RewardPolicy::TILE_NOT_CLEANED, 10},
+      {RewardPolicy::ALL_TILES_CLEANED, 50}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);

@@ -55,33 +55,23 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       if (CheckBoundaries({new_coor.first - 1, new_coor.second})) {
         new_coor.first--;
       }
-      // If out of boundaries, give large penalty and don't move.
-      else {
-        reward -= 5;
-      }
-
       break;
+
     case AgentMovement::AGENT_RIGHT:
       if (CheckBoundaries({new_coor.first + 1, new_coor.second})) {
         new_coor.first++;
-      } else {
-        reward -= 5;
       }
-
       break;
+
     case AgentMovement::AGENT_UP:
       if (CheckBoundaries({new_coor.first, new_coor.second - 1})) {
         new_coor.second--;
-      } else {
-        reward -= 5;
       }
-
       break;
+
     case AgentMovement::AGENT_DOWN:
       if (CheckBoundaries({new_coor.first, new_coor.second + 1})) {
         new_coor.second++;
-      } else {
-        reward -= 5;
       }
       break;
 
@@ -118,7 +108,7 @@ TileEnvironment::Step(const std::vector<int> &actions,
 
   // If it reaches the max step, give large negative reward.
   if (current_step == max_step_ - 1 && !IsAllTilesCleaned()) {
-    reward += -10;
+    reward += -30;
     done = true;
   }
 
@@ -140,11 +130,6 @@ float TileEnvironment::GetRewardFromTileState(const std::pair<int, int> &coor) {
   // If the tile is uncleaned,
   if (!cleaned_tile_grid_[coor]) {
     return reward_policy_map[RewardPolicy::TILE_NOT_CLEANED];
-  }
-
-  // If the tile is already cleaned,
-  else if (cleaned_tile_grid_[coor]) {
-    return reward_policy_map[RewardPolicy::TILE_ALREADY_CLEANED];
   }
 
   // TODO: Add more policy.

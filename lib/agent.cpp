@@ -5,7 +5,6 @@ void Agent::Step(std::vector<float> &state, int action, float reward,
                  std::vector<float> &next_state, bool done) {
   // Save experience in replay memory
   memory_.Add(state, action, reward, next_state, done);
-
   // Learn every UPDATE_EVERY time steps.
   t_step_ = (t_step_ + 1) % UPDATE_EVERY;
   if (t_step_ == 0) {

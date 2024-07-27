@@ -39,17 +39,15 @@ int main(int argc, char **argv) {
 
   XInitThreads();
 
-  torch::Device device(torch::cuda::is_available() ? torch::kCUDA
-                                                   : torch::kCPU);
+  torch::Device device(torch::kCPU);
   LOG(INFO) << "Using device: "
             << (device.type() == torch::kCUDA ? "CUDA" : "CPU");
 
   // Setup Agent and Environment.
   const int agent_size = 1;
-  const int number_of_tile_per_line = 10;
-  const int state_size =
-      agent_size * 2 + 1; // agent coordinates and all cleaned state (+1).
-  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 3;
+  const int number_of_tile_per_line = 4;
+  const int state_size = 2 + number_of_tile_per_line * number_of_tile_per_line;
+  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
   const int action_size = 4;
   const int seed = 0;
 
@@ -229,7 +227,6 @@ int main(int argc, char **argv) {
           render_util::ClearCleanedTileState(tile_grid);
           break;
         }
-
         step++;
       }
 
