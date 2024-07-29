@@ -45,8 +45,9 @@ int main(int argc, char **argv) {
 
   // Setup Agent and Environment.
   const int agent_size = 1;
-  const int number_of_tile_per_line = 4;
-  const int state_size = 2 + number_of_tile_per_line * number_of_tile_per_line;
+  const int number_of_tile_per_line = 5;
+  const int state_size =
+      2 * agent_size + number_of_tile_per_line * number_of_tile_per_line;
   const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
   const int action_size = 4;
   const int seed = 0;
