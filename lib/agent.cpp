@@ -24,26 +24,68 @@ void Agent::Step(std::vector<float> &state, int action, float reward,
         dones_int.push_back(done ? 1 : 0);
       }
 
+      std::vector<float> flattened_states;
+      for (const auto &state : next_states) {
+        flattened_states.insert(flattened_states.end(), state.begin(),
+                                state.end());
+      }
+
+      std::vector<int64_t> actions_int64(actions.begin(), actions.end());
+      std::vector<float> flattened_next_states;
+      for (const auto &state : next_states) {
+        flattened_next_states.insert(flattened_next_states.end(), state.begin(),
+                                     state.end());
+      }
+
       std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
                  torch::Tensor>
           experiences_tensors{
-              torch::from_blob(states.data(),
+              torch::from_blob(flattened_states.data(),
                                {static_cast<long long>(states.size()),
-                                static_cast<long long>(state_size_)})
+                                static_cast<long long>(state_size_)},
+                               torch::kFloat32)
                   .to(device_),
-              torch::from_blob(actions.data(),
-                               {static_cast<long long>(actions.size()), 1})
+              torch::from_blob(
+                  actions_int64.data(),
+                  {static_cast<long long>(actions_int64.size()), 1},
+                  torch::kInt64)
                   .to(device_),
               torch::from_blob(rewards.data(),
-                               {static_cast<long long>(rewards.size()), 1})
+                               {static_cast<long long>(rewards.size()), 1},
+                               torch::kFloat32)
                   .to(device_),
-              torch::from_blob(next_states.data(),
+              torch::from_blob(flattened_next_states.data(),
                                {static_cast<long long>(next_states.size()),
-                                static_cast<long long>(state_size_)})
+                                static_cast<long long>(state_size_)},
+                               torch::kFloat32)
                   .to(device_),
               torch::from_blob(dones_int.data(),
-                               {static_cast<long long>(dones_int.size()), 1})
+                               {static_cast<long long>(dones_int.size()), 1},
+                               torch::kFloat32)
                   .to(device_)};
+
+      std::cout << "states in Step before processing:\n" << states << std::endl;
+      std::cout << "states in Step after processsing:\n"
+                << std::get<0>(experiences_tensors) << std::endl;
+
+      std::cout << "action in Step before processing:\n"
+                << actions << std::endl;
+      std::cout << "action in Step after processsing:\n"
+                << std::get<1>(experiences_tensors) << std::endl;
+
+      std::cout << "rewards in Step before processing:\n"
+                << rewards << std::endl;
+      std::cout << "rewards in Step after processsing:\n"
+                << std::get<2>(experiences_tensors) << std::endl;
+
+      std::cout << "next_states in Step before processing:\n"
+                << next_states << std::endl;
+      std::cout << "next_states in Step after processsing:\n"
+                << std::get<3>(experiences_tensors) << std::endl;
+
+      std::cout << "dones in Step before processing:\n" << dones << std::endl;
+      std::cout << "dones in Step after processsing:\n"
+                << std::get<4>(experiences_tensors) << std::endl;
 
       Learn(experiences_tensors, GAMMA);
     }
@@ -55,33 +97,28 @@ int Agent::Act(std::vector<float> &state, float eps) {
   torch::Tensor state_tensor =
       torch::from_blob(state.data(), {1, state_size_}, torch::kFloat32)
           .to(device_);
-  // state_tensor.unsqueeze_(0);
 
   // Set Q-network to evaluation mode and get action values
   qnetwork_local.eval();
-  torch::NoGradGuard no_grad;
-  torch::Tensor action_values = qnetwork_local.Forward(state_tensor);
+  torch::Tensor action_values;
+  {
+    torch::NoGradGuard no_grad;
+    action_values = qnetwork_local.forward(state_tensor);
+  }
   qnetwork_local.train();
+
+  int selected_action;
 
   // Check if randomly generated number is greater than epsilon
   if (generate_random_number(0.0, 1.0) > eps) {
-    // Exploitation: choose the best action among possible directions
-    float max_value = action_values.max().item<float>();
-    int max_index = 0;
-
-    for (int i = 0; i < action_size_; i++) {
-      if (action_values[0][i].item<float>() > max_value) {
-        max_value = action_values[0][i].item<float>();
-        max_index = i;
-      }
-    }
-
-    return max_index;
+    // Exploitation: choose the best action
+    selected_action = action_values.argmax(1).item<int>();
   } else {
-    // Generate a random number based on the possible pathways.
-    int rand_num = generate_random_number(0, action_size_ - 1);
-    return rand_num;
+    // Exploration: choose a random action
+    selected_action = generate_random_number(0, action_size_ - 1);
   }
+
+  return selected_action;
 }
 
 void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
@@ -94,11 +131,32 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   auto &next_states = std::get<3>(experiences);
   auto &dones = std::get<4>(experiences);
 
-  // Convert actions to a PyTorch tensor
-  torch::Tensor qValues = qnetwork_target.Forward(next_states);
+  // DEBUG LOG
+  std::cout << "In Learn State" << std::endl;
 
-  // Detach the tensor to prevent gradient tracking if needed
-  qValues = qValues.detach();
+  const char *tensor_names[] = {"states", "actions", "rewards", "next_states",
+                                "dones"};
+  int tensor_index = 0;
+  for (const auto &tensor : {states, actions, rewards, next_states, dones}) {
+    bool has_nan = torch::any(torch::isnan(tensor)).item<bool>();
+    bool has_inf = torch::any(torch::isinf(tensor)).item<bool>();
+    if (has_nan || has_inf) {
+      std::cout << "Error detected in tensor:\n"
+                << tensor_names[tensor_index] << std::endl;
+      exit(1);
+    }
+    tensor_index++;
+  }
+  // DEBUG LOG END
+
+  // Convert actions to a PyTorch tensor
+  torch::Tensor qValues;
+  {
+    torch::NoGradGuard no_grad;
+    qValues = qnetwork_target.forward(next_states);
+  }
+
+  std::cout << "qValues:\n" << qValues << std::endl;
 
   // Find the maximum values along dimension 1
   torch::Tensor max_values = std::get<0>(torch::max(qValues, 1));
@@ -107,12 +165,13 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   torch::Tensor q_targets_next = max_values.unsqueeze(1);
 
   // Calculate target value from Bellman equation
-  torch::Tensor q_targets = rewards + gamma * q_targets_next * (1 - dones);
+  torch::Tensor q_targets =
+      (rewards + gamma * q_targets_next * (1 - dones)).detach();
 
-  // Forward pass through the network (replace 'your_network' with your actual
-  // network)
-  torch::Tensor output = qnetwork_local.Forward(
-      states); // Replace 'your_network' with your actual network
+  // Forward pass through the network
+  torch::Tensor output = qnetwork_local.forward(states);
+
+  std::cout << "output:\n" << output << std::endl;
 
   // Perform the gather operation
   torch::Tensor q_expected;
@@ -123,14 +182,15 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   q_expected = output.gather(1, actions);
 
   auto loss = torch::mse_loss(q_expected, q_targets);
+  // auto loss = torch::nn::functional::huber_loss(q_expected, q_targets);
 
-  loss_value_ = 0;
   loss_value_ = loss.item<float>();
 
   optimizer.zero_grad();
   loss.backward();
 
   torch::nn::utils::clip_grad_norm_(qnetwork_local.parameters(), 1.0);
+
   optimizer.step();
 
   // Update target network
@@ -139,12 +199,13 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
 
 void Agent::SoftUpdate(QNetwork &local_model, QNetwork &target_model,
                        float tau) {
+  torch::NoGradGuard no_grad;
   auto local_params = local_model.parameters();
   auto target_params = target_model.parameters();
 
   for (size_t i = 0; i < local_params.size(); ++i) {
-    target_params[i].data().copy_(tau * local_params[i].data() +
-                                  (1.0 - tau) * target_params[i].data());
+    target_params[i].copy_(tau * local_params[i] +
+                           (1.0 - tau) * target_params[i]);
   }
 }
 

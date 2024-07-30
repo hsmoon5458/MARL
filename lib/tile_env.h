@@ -124,10 +124,15 @@ private:
 
     // Append agents coordinate.
     for (int agent_index = 0; agent_index < agent_size_; agent_index++) {
-      current_state.push_back(
-          agents_current_tile_grid_location_[agent_index].first);
-      current_state.push_back(
-          agents_current_tile_grid_location_[agent_index].second);
+      float normalized_x =
+          agents_current_tile_grid_location_[agent_index].first /
+          (float)number_of_tile_per_line_;
+      float normalized_y =
+          agents_current_tile_grid_location_[agent_index].second /
+          (float)number_of_tile_per_line_;
+
+      current_state.push_back(normalized_x);
+      current_state.push_back(normalized_y);
     }
 
     // Append cleaned state of each tile.
@@ -147,8 +152,8 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_NOT_CLEANED, 10},
-      {RewardPolicy::ALL_TILES_CLEANED, 50}};
+      {RewardPolicy::TILE_NOT_CLEANED, 1},
+      {RewardPolicy::ALL_TILES_CLEANED, 5}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);

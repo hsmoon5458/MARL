@@ -159,12 +159,12 @@ int main(int argc, char **argv) {
   const float eps_end = 0.01;
   const float eps_decay = 0.995;
 
-  std::ofstream out_file("/home/hmoon/reward_single_agent_1.txt",
-                         std::ios::app);
-  if (!out_file) {
-    LOG(ERROR) << "Unable to open file!";
-    return 1;
-  }
+  // std::ofstream out_file("/home/hmoon/reward_single_agent_1.txt",
+  //                        std::ios::app);
+  // if (!out_file) {
+  //   LOG(ERROR) << "Unable to open file!";
+  //   return 1;
+  // }
 
   // Start main loop of Window GUI.
   while (window->isOpen()) {
@@ -228,6 +228,7 @@ int main(int argc, char **argv) {
           render_util::ClearCleanedTileState(tile_grid);
           break;
         }
+        std::cout << "Step: " << step << std::endl;
         step++;
       }
 
@@ -235,14 +236,16 @@ int main(int argc, char **argv) {
 
       eps = std::max(eps_end, eps_decay * eps);
 
-      for (int i = 0; i < agent_size; i++) {
-        out_file << agents_vector[i]->GetMSELossValue() << " ";
-      }
-      LOG(INFO) << "Episode: " << i_episode << " Reward: " << total_reward;
-      out_file << total_reward << std::endl;
+      // for (int i = 0; i < agent_size; i++) {
+      //   out_file << agents_vector[i]->GetMSELossValue() << " ";
+      // }
+      std::cout << "Episode: " << i_episode << "\tSteps: " << step
+                << "\tReward: " << total_reward
+                << "\tMSE_Loss: " << agents_vector[0]->GetMSELossValue()
+                << "\teps: " << eps << std::endl;
+      // out_file << total_reward << std::endl;
     }
   }
-
-  out_file.close();
+  // out_file.close();
   return 0;
 }

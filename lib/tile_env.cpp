@@ -54,24 +54,32 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
     case AgentMovement::AGENT_LEFT:
       if (CheckBoundaries({new_coor.first - 1, new_coor.second})) {
         new_coor.first--;
+      } else {
+        reward += -0.5;
       }
       break;
 
     case AgentMovement::AGENT_RIGHT:
       if (CheckBoundaries({new_coor.first + 1, new_coor.second})) {
         new_coor.first++;
+      } else {
+        reward += -0.5;
       }
       break;
 
     case AgentMovement::AGENT_UP:
       if (CheckBoundaries({new_coor.first, new_coor.second - 1})) {
         new_coor.second--;
+      } else {
+        reward += -0.5;
       }
       break;
 
     case AgentMovement::AGENT_DOWN:
       if (CheckBoundaries({new_coor.first, new_coor.second + 1})) {
         new_coor.second++;
+      } else {
+        reward += -0.5;
       }
       break;
 
@@ -85,7 +93,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
     // 'cleaned_tile', so each action is corresponding to 'cleaned_tile'.
     reward = GetRewardFromTileState(new_coor);
     // TODO: Add this to RewardPolicy.
-    const auto time_penalty = -1;
+    const auto time_penalty = -0.1;
     reward += time_penalty;
 
     SetAgentTileGridLocation(agent_index, new_coor);
@@ -108,7 +116,7 @@ TileEnvironment::Step(const std::vector<int> &actions,
 
   // If it reaches the max step, give large negative reward.
   if (current_step == max_step_ - 1 && !IsAllTilesCleaned()) {
-    reward += -30;
+    reward += -5;
     done = true;
   }
 

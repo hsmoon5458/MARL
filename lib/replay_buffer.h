@@ -28,18 +28,16 @@ private:
 public:
   ReplayBuffer(int action_size, int buffer_size, int batch_size, int seed)
       : action_size(action_size), buffer_size(buffer_size),
-        batch_size(batch_size), seed(seed) {
+        batch_size(batch_size), seed(seed), memory_() {
     // Initialize other variables and structures here...
   }
 
   void Add(std::vector<float> &state, int action, float reward,
            std::vector<float> &next_state, bool done) {
-    Experience experience;
-    experience.state = state;
-    experience.action = action;
-    experience.reward = reward;
-    experience.next_state = next_state;
-    experience.done = done;
+    if (memory_.size() >= buffer_size) {
+      memory_.pop_front();
+    }
+    Experience experience{state, action, reward, next_state, done};
     memory_.push_back(experience);
   }
 
@@ -53,15 +51,16 @@ public:
     std::vector<std::vector<float>> next_states;
     std::vector<bool> dones;
 
+    int sample_size = std::min(static_cast<int>(memory_.size()), batch_size);
+
     std::vector<size_t> indices(memory_.size());
-    std::iota(indices.begin(), indices.end(),
-              0); // Fill indices with 0, 1, ..., memory_.size()-1
+    std::iota(indices.begin(), indices.end(), 0);
 
     std::random_device rd;
     std::mt19937 gen(seed != 0 ? seed : rd());
-    std::shuffle(indices.begin(), indices.end(), gen); // Shuffle indices
+    std::shuffle(indices.begin(), indices.end(), gen);
 
-    for (int i = 0; i < batch_size; ++i) {
+    for (int i = 0; i < sample_size; ++i) {
       int index = indices[i];
       states.push_back(memory_[index].state);
       actions.push_back(memory_[index].action);
