@@ -64,29 +64,6 @@ void Agent::Step(std::vector<float> &state, int action, float reward,
                                torch::kFloat32)
                   .to(device_)};
 
-      std::cout << "states in Step before processing:\n" << states << std::endl;
-      std::cout << "states in Step after processsing:\n"
-                << std::get<0>(experiences_tensors) << std::endl;
-
-      std::cout << "action in Step before processing:\n"
-                << actions << std::endl;
-      std::cout << "action in Step after processsing:\n"
-                << std::get<1>(experiences_tensors) << std::endl;
-
-      std::cout << "rewards in Step before processing:\n"
-                << rewards << std::endl;
-      std::cout << "rewards in Step after processsing:\n"
-                << std::get<2>(experiences_tensors) << std::endl;
-
-      std::cout << "next_states in Step before processing:\n"
-                << next_states << std::endl;
-      std::cout << "next_states in Step after processsing:\n"
-                << std::get<3>(experiences_tensors) << std::endl;
-
-      std::cout << "dones in Step before processing:\n" << dones << std::endl;
-      std::cout << "dones in Step after processsing:\n"
-                << std::get<4>(experiences_tensors) << std::endl;
-
       Learn(experiences_tensors, GAMMA);
     }
   }
@@ -131,9 +108,6 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   auto &next_states = std::get<3>(experiences);
   auto &dones = std::get<4>(experiences);
 
-  // DEBUG LOG
-  std::cout << "In Learn State" << std::endl;
-
   const char *tensor_names[] = {"states", "actions", "rewards", "next_states",
                                 "dones"};
   int tensor_index = 0;
@@ -141,13 +115,11 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
     bool has_nan = torch::any(torch::isnan(tensor)).item<bool>();
     bool has_inf = torch::any(torch::isinf(tensor)).item<bool>();
     if (has_nan || has_inf) {
-      std::cout << "Error detected in tensor:\n"
-                << tensor_names[tensor_index] << std::endl;
+      LOG(ERROR) << "Error detected in tensor:\n" << tensor_names[tensor_index];
       exit(1);
     }
     tensor_index++;
   }
-  // DEBUG LOG END
 
   // Convert actions to a PyTorch tensor
   torch::Tensor qValues;
@@ -155,8 +127,6 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
     torch::NoGradGuard no_grad;
     qValues = qnetwork_target.forward(next_states);
   }
-
-  std::cout << "qValues:\n" << qValues << std::endl;
 
   // Find the maximum values along dimension 1
   torch::Tensor max_values = std::get<0>(torch::max(qValues, 1));
@@ -170,8 +140,6 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
 
   // Forward pass through the network
   torch::Tensor output = qnetwork_local.forward(states);
-
-  std::cout << "output:\n" << output << std::endl;
 
   // Perform the gather operation
   torch::Tensor q_expected;

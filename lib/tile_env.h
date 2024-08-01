@@ -152,8 +152,8 @@ private:
 
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
-      {RewardPolicy::TILE_NOT_CLEANED, 1},
-      {RewardPolicy::ALL_TILES_CLEANED, 5}};
+      {RewardPolicy::TILE_NOT_CLEANED, 0.5},
+      {RewardPolicy::ALL_TILES_CLEANED, 1}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);

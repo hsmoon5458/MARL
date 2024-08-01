@@ -10,23 +10,23 @@ public:
   QNetwork(int inputSize, int outputSize, torch::Device device) {
     // Define layers for the neural network
     fc1 = register_module("fc1", torch::nn::Linear(inputSize, 64));
-    bn1 = register_module("bn1", torch::nn::BatchNorm1d(64));
     fc2 = register_module("fc2", torch::nn::Linear(64, 64));
-    bn2 = register_module("bn2", torch::nn::BatchNorm1d(64));
-    fc3 = register_module("fc3", torch::nn::Linear(64, outputSize));
+    fc3 = register_module("fc3", torch::nn::Linear(64, 64));
+    fc4 = register_module("fc4", torch::nn::Linear(64, outputSize));
 
-    torch::nn::init::xavier_uniform_(fc1->weight);
-    torch::nn::init::xavier_uniform_(fc2->weight);
-    torch::nn::init::xavier_uniform_(fc3->weight);
+    // torch::nn::init::xavier_uniform_(fc1->weight);
+    // torch::nn::init::xavier_uniform_(fc2->weight);
+    // torch::nn::init::xavier_uniform_(fc3->weight);
 
     this->to(device);
   }
 
   // Define the forward pass through the neural network
   torch::Tensor forward(torch::Tensor x) {
-    x = torch::leaky_relu(bn1(fc1(x)));
-    x = torch::leaky_relu(bn2(fc2(x)));
-    x = fc3(x);
+    x = torch::relu(fc1(x));
+    x = torch::relu(fc2(x));
+    x = torch::relu(fc3(x));
+    x = fc4(x);
     return x;
   }
 
@@ -36,6 +36,5 @@ public:
   }
 
 private:
-  torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr};
-  torch::nn::BatchNorm1d bn1{nullptr}, bn2{nullptr};
+  torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr}, fc4{nullptr};
 };

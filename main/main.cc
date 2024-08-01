@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   const int number_of_tile_per_line = 5;
   const int state_size =
       2 * agent_size + number_of_tile_per_line * number_of_tile_per_line;
-  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
+  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 5;
   const int action_size = 4;
   const int seed = 0;
 
@@ -155,16 +155,17 @@ int main(int argc, char **argv) {
   }
 
   const int n_episodes = 1000;
-  const float eps_start = 1.0;
-  const float eps_end = 0.01;
-  const float eps_decay = 0.995;
+  const float eps_start = 1.0f;
+  const float eps_end = 0.01f;
+  const float eps_decay = 0.995f;
 
-  // std::ofstream out_file("/home/hmoon/reward_single_agent_1.txt",
-  //                        std::ios::app);
-  // if (!out_file) {
-  //   LOG(ERROR) << "Unable to open file!";
-  //   return 1;
-  // }
+  std::string output_file_name =
+      get_home_directory() + "/" + get_current_time() + ".txt";
+  std::ofstream out_file(output_file_name, std::ios::app);
+  if (!out_file) {
+    LOG(ERROR) << "Unable to open file!";
+    return 1;
+  }
 
   // Start main loop of Window GUI.
   while (window->isOpen()) {
@@ -228,7 +229,6 @@ int main(int argc, char **argv) {
           render_util::ClearCleanedTileState(tile_grid);
           break;
         }
-        std::cout << "Step: " << step << std::endl;
         step++;
       }
 
@@ -236,16 +236,22 @@ int main(int argc, char **argv) {
 
       eps = std::max(eps_end, eps_decay * eps);
 
-      // for (int i = 0; i < agent_size; i++) {
-      //   out_file << agents_vector[i]->GetMSELossValue() << " ";
-      // }
-      std::cout << "Episode: " << i_episode << "\tSteps: " << step
-                << "\tReward: " << total_reward
-                << "\tMSE_Loss: " << agents_vector[0]->GetMSELossValue()
-                << "\teps: " << eps << std::endl;
-      // out_file << total_reward << std::endl;
+      for (int i = 0; i < agent_size; i++) {
+        out_file << "loss_" << i << ":\t" << agents_vector[i]->GetMSELossValue()
+                 << "\t";
+      }
+      // std::cout << "Episode: " << i_episode << "\tSteps: " << step
+      //           << "\tReward: " << total_reward
+      //           << "\tMSE_Loss: " << agents_vector[0]->GetMSELossValue()
+      //           << "\teps: " << eps << std::endl;
+
+      out_file << "steps:\t" << step << "\treward:\t" << total_reward
+               << std::endl;
     }
+    LOG(INFO) << "Training Done!";
+    out_file.close();
+    break;
   }
-  // out_file.close();
+
   return 0;
 }
