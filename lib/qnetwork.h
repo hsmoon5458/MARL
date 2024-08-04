@@ -11,12 +11,11 @@ public:
     // Define layers for the neural network
     fc1 = register_module("fc1", torch::nn::Linear(inputSize, 64));
     fc2 = register_module("fc2", torch::nn::Linear(64, 64));
-    fc3 = register_module("fc3", torch::nn::Linear(64, 64));
-    fc4 = register_module("fc4", torch::nn::Linear(64, outputSize));
+    fc3 = register_module("fc3", torch::nn::Linear(64, outputSize));
 
-    // torch::nn::init::xavier_uniform_(fc1->weight);
-    // torch::nn::init::xavier_uniform_(fc2->weight);
-    // torch::nn::init::xavier_uniform_(fc3->weight);
+    torch::nn::init::xavier_uniform_(fc1->weight);
+    torch::nn::init::xavier_uniform_(fc2->weight);
+    torch::nn::init::xavier_uniform_(fc3->weight);
 
     this->to(device);
   }
@@ -25,8 +24,7 @@ public:
   torch::Tensor forward(torch::Tensor x) {
     x = torch::relu(fc1(x));
     x = torch::relu(fc2(x));
-    x = torch::relu(fc3(x));
-    x = fc4(x);
+    x = fc3(x);
     return x;
   }
 
@@ -36,5 +34,5 @@ public:
   }
 
 private:
-  torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr}, fc4{nullptr};
+  torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr};
 };

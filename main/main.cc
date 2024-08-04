@@ -45,12 +45,11 @@ int main(int argc, char **argv) {
 
   // Setup Agent and Environment.
   const int agent_size = 1;
-  const int number_of_tile_per_line = 5;
+  const int number_of_tile_per_line = 3;
   const int state_size =
       2 * agent_size + number_of_tile_per_line * number_of_tile_per_line;
-  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 5;
+  const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
   const int action_size = 4;
-  const int seed = 0;
 
   std::vector<lib::agent::Agent *> agents_vector;
 
@@ -62,7 +61,7 @@ int main(int argc, char **argv) {
   // Instantiate agents.
   for (int id = 0; id < agent_size; id++) {
     auto *agent = new lib::agent::Agent(id, number_of_tile_per_line, state_size,
-                                        action_size, seed, device);
+                                        action_size, device);
     agents_vector.push_back(agent);
   }
 

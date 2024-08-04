@@ -121,33 +121,20 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
     tensor_index++;
   }
 
-  // Convert actions to a PyTorch tensor
-  torch::Tensor qValues;
+  torch::Tensor q_targets_next;
   {
     torch::NoGradGuard no_grad;
-    qValues = qnetwork_target.forward(next_states);
+    auto q_values = qnetwork_target.forward(next_states);
+    q_targets_next = std::get<0>(torch::max(q_values, 1)).unsqueeze(1);
   }
 
-  // Find the maximum values along dimension 1
-  torch::Tensor max_values = std::get<0>(torch::max(qValues, 1));
-
-  // Add a dimension of size 1 at position 1
-  torch::Tensor q_targets_next = max_values.unsqueeze(1);
-
   // Calculate target value from Bellman equation
-  torch::Tensor q_targets =
-      (rewards + gamma * q_targets_next * (1 - dones)).detach();
+  torch::Tensor q_targets = (rewards + gamma * q_targets_next * (1 - dones));
 
   // Forward pass through the network
-  torch::Tensor output = qnetwork_local.forward(states);
-
-  // Perform the gather operation
-  torch::Tensor q_expected;
-
-  actions = actions.to(torch::kInt64);
-
   // Perform gather along dimension 1 using index 'actions'
-  q_expected = output.gather(1, actions);
+  auto q_expected =
+      qnetwork_local.forward(states).gather(1, actions.to(torch::kInt64));
 
   auto loss = torch::mse_loss(q_expected, q_targets);
   // auto loss = torch::nn::functional::huber_loss(q_expected, q_targets);

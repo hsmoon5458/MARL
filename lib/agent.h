@@ -13,7 +13,7 @@ constexpr float BUFFER_SIZE = int(1e5); // replay buffer size
 constexpr int BATCH_SIZE = 64;          // minibatch size
 constexpr float GAMMA = 0.99;           // discount factor
 constexpr float TAU = 0.001;            // for soft update of target parameters
-constexpr float LEARNING_RATE = 0.0001; // learning rate
+constexpr float LEARNING_RATE = 0.0007; // learning rate
 constexpr int UPDATE_EVERY = 4;         // how often to update the network
 } // namespace
 
@@ -25,12 +25,12 @@ public:
   torch::optim::Adam optimizer;
 
   Agent(int id, int number_of_tile_per_line, int state_size, int action_size,
-        int seed, torch::Device device)
+        torch::Device device)
       : id_(id), number_of_tile_per_line_(number_of_tile_per_line),
-        state_size_(state_size), action_size_(action_size), seed_(seed),
-        device_(device), qnetwork_local(state_size, action_size, device),
+        state_size_(state_size), action_size_(action_size), device_(device),
+        qnetwork_local(state_size, action_size, device),
         qnetwork_target(state_size, action_size, device),
-        memory_(action_size, BUFFER_SIZE, BATCH_SIZE, seed),
+        memory_(action_size, BUFFER_SIZE, BATCH_SIZE),
         optimizer(qnetwork_local.parameters(),
                   torch::optim::AdamOptions(LEARNING_RATE))
 
@@ -55,7 +55,6 @@ public:
 private:
   int state_size_;
   int action_size_;
-  int seed_;
   torch::Device device_;
   ReplayBuffer memory_;
   int t_step_;

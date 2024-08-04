@@ -18,17 +18,16 @@ struct Experience {
 
 class ReplayBuffer {
 private:
-  int action_size;
+  int action_size; // Currently not being used.
   int buffer_size;
   int batch_size;
-  int seed;
 
   std::deque<Experience> memory_;
 
 public:
-  ReplayBuffer(int action_size, int buffer_size, int batch_size, int seed)
+  ReplayBuffer(int action_size, int buffer_size, int batch_size)
       : action_size(action_size), buffer_size(buffer_size),
-        batch_size(batch_size), seed(seed), memory_() {
+        batch_size(batch_size), memory_() {
     // Initialize other variables and structures here...
   }
 
@@ -57,7 +56,7 @@ public:
     std::iota(indices.begin(), indices.end(), 0);
 
     std::random_device rd;
-    std::mt19937 gen(seed != 0 ? seed : rd());
+    std::mt19937 gen(rd());
     std::shuffle(indices.begin(), indices.end(), gen);
 
     for (int i = 0; i < sample_size; ++i) {
