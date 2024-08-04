@@ -13,7 +13,7 @@ constexpr float BUFFER_SIZE = int(1e5); // replay buffer size
 constexpr int BATCH_SIZE = 64;          // minibatch size
 constexpr float GAMMA = 0.99;           // discount factor
 constexpr float TAU = 0.001;            // for soft update of target parameters
-constexpr float LEARNING_RATE = 0.0007; // learning rate
+constexpr float LEARNING_RATE = 0.0001; // learning rate
 constexpr int UPDATE_EVERY = 4;         // how often to update the network
 } // namespace
 

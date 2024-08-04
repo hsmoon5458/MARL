@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
     circles[i]->setFillColor(render_util::agent_colors[i]);
   }
 
-  const int n_episodes = 1000;
+  const int n_episodes = 3000;
   const float eps_start = 1.0f;
   const float eps_end = 0.01f;
   const float eps_decay = 0.995f;
