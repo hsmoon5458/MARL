@@ -41,6 +41,11 @@ std::vector<float> TileEnvironment::Reset() {
     state.push_back(agent_current_tile_grid_location_.second);
   }
 
+  // Set cleaned tile for agent initial location.
+  for (int i = 0; i < agents_current_tile_grid_location_.size(); i++) {
+    SetCleanedTile(agent_initial_coors_[i]);
+  }
+
   total_reward_ = 0;
   return state;
 }

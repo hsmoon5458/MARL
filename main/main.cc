@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
   // Setup Agent and Environment.
   const int agent_size = 1;
-  const int number_of_tile_per_line = 3;
+  const int number_of_tile_per_line = 5;
   const int state_size =
       2 * agent_size + number_of_tile_per_line * number_of_tile_per_line;
   const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
   const int n_episodes = 3000;
   const float eps_start = 1.0f;
   const float eps_end = 0.01f;
-  const float eps_decay = 0.995f;
+  const float eps_decay = 50000; // Expoential decay
 
   std::string output_file_name =
       get_home_directory() + "/" + get_current_time() + ".txt";
@@ -165,6 +165,8 @@ int main(int argc, char **argv) {
     LOG(ERROR) << "Unable to open file!";
     return 1;
   }
+
+  int global_step = 0;
 
   // Start main loop of Window GUI.
   while (window->isOpen()) {
@@ -178,6 +180,9 @@ int main(int argc, char **argv) {
       int step = 0;
       // Each episode, execute max_t actions.
       while (true) {
+        eps = eps_end +
+              (eps_start - eps_end) * std::exp(-1.0f * global_step / eps_decay);
+
         // Get action from each agent for environment.
         std::vector<int> actions;
         // In this for loop, state and eps are identical for
@@ -229,11 +234,10 @@ int main(int argc, char **argv) {
           break;
         }
         step++;
+        global_step++;
       }
 
       render_util::ClearCleanedTileState(tile_grid);
-
-      eps = std::max(eps_end, eps_decay * eps);
 
       for (int i = 0; i < agent_size; i++) {
         out_file << "loss_" << i << ":\t" << agents_vector[i]->GetMSELossValue()

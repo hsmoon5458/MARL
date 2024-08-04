@@ -121,11 +121,17 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
     tensor_index++;
   }
 
+  // Double DQN
   torch::Tensor q_targets_next;
   {
     torch::NoGradGuard no_grad;
-    auto q_values = qnetwork_target.forward(next_states);
-    q_targets_next = std::get<0>(torch::max(q_values, 1)).unsqueeze(1);
+    // Use local network to select actions
+    auto q_values_local = qnetwork_local.forward(next_states);
+    auto best_actions = std::get<1>(torch::max(q_values_local, 1));
+
+    // Use target network to evaluate actions
+    auto q_values_target = qnetwork_target.forward(next_states);
+    q_targets_next = q_values_target.gather(1, best_actions.unsqueeze(1));
   }
 
   // Calculate target value from Bellman equation
