@@ -142,8 +142,8 @@ void Agent::Learn(std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
   auto q_expected =
       qnetwork_local.forward(states).gather(1, actions.to(torch::kInt64));
 
-  auto loss = torch::mse_loss(q_expected, q_targets);
-  // auto loss = torch::nn::functional::huber_loss(q_expected, q_targets);
+  // auto loss = torch::mse_loss(q_expected, q_targets);
+  auto loss = torch::nn::functional::huber_loss(q_expected, q_targets);
 
   loss_value_ = loss.item<float>();
 

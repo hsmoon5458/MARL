@@ -46,8 +46,10 @@ int main(int argc, char **argv) {
   // Setup Agent and Environment.
   const int agent_size = 1;
   const int number_of_tile_per_line = 5;
-  const int state_size =
-      2 * agent_size + number_of_tile_per_line * number_of_tile_per_line;
+  const int state_size = 2 * agent_size +
+                         number_of_tile_per_line * number_of_tile_per_line + 8 +
+                         1; // 8 is nearest uncleaned tile(4 tiles) grid
+                            // coordinate(x,y), 1 is # of uncleaned tiles.
   const int max_step = number_of_tile_per_line * number_of_tile_per_line * 4;
   const int action_size = 4;
 
@@ -153,7 +155,7 @@ int main(int argc, char **argv) {
     circles[i]->setFillColor(render_util::agent_colors[i]);
   }
 
-  const int n_episodes = 3000;
+  const int n_episodes = 2000;
   const float eps_start = 1.0f;
   const float eps_end = 0.01f;
   const float eps_decay = 50000; // Expoential decay

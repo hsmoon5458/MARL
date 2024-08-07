@@ -76,6 +76,15 @@ public:
     }
   }
 
+  int GetNumberOfUncleanedTile() {
+    int count = 0;
+    for (const auto &each_tile : cleaned_tile_grid_) {
+      if (!each_tile.second)
+        ++count;
+    }
+    return count;
+  }
+
   bool IsAllTilesCleaned() {
     for (const auto &each_tile : cleaned_tile_grid_) {
       if (!each_tile.second)
@@ -120,6 +129,8 @@ private:
 
   // Calculate the state based on the number of agent and tile grid setting.
   std::vector<float> calculate_state() {
+    const int NUM_NEARBY_TILES =
+        4; // For example, track the 4 nearest uncleaned tiles
     std::vector<float> current_state;
 
     // Append agents coordinate.
@@ -133,12 +144,47 @@ private:
 
       current_state.push_back(normalized_x);
       current_state.push_back(normalized_y);
+
+      std::vector<std::pair<float, float>> nearby_uncleaned_tiles;
+      int agent_x = agents_current_tile_grid_location_[agent_index].first;
+      int agent_y = agents_current_tile_grid_location_[agent_index].second;
+
+      for (const auto &tile : cleaned_tile_grid_) {
+        if (!tile.second) { // If the tile is uncleaned
+          int tile_x = tile.first.first;
+          int tile_y = tile.first.second;
+          float dx = (tile_x - agent_x) /
+                     (float)number_of_tile_per_line_; // Normalized relative x
+          float dy = (tile_y - agent_y) /
+                     (float)number_of_tile_per_line_; // Normalized relative y
+          nearby_uncleaned_tiles.push_back({dx, dy});
+        }
+      }
+
+      // Sort by distance and take the nearest NUM_NEARBY_TILES
+      std::sort(nearby_uncleaned_tiles.begin(), nearby_uncleaned_tiles.end(),
+                [](const auto &a, const auto &b) {
+                  return (a.first * a.first + a.second * a.second) <
+                         (b.first * b.first + b.second * b.second);
+                });
+
+      nearby_uncleaned_tiles.resize(NUM_NEARBY_TILES,
+                                    {0.0f, 0.0f}); // Pad with (0,0) if needed
+
+      for (const auto &tile : nearby_uncleaned_tiles) {
+        current_state.push_back(tile.first);
+        current_state.push_back(tile.second);
+      }
     }
 
     // Append cleaned state of each tile.
     for (const auto &tile : cleaned_tile_grid_) {
       current_state.push_back(tile.second ? 1.0f : 0.0f);
     }
+
+    current_state.push_back(GetNumberOfUncleanedTile() /
+                            number_of_tile_per_line_ *
+                            number_of_tile_per_line_);
 
     if (current_state.size() != state_size_) {
       LOG(ERROR) << "State size mismatch:" << current_state.size() << " "
@@ -150,11 +196,26 @@ private:
     return current_state;
   }
 
+  //   Relative Position:
+  // Instead of absolute coordinates, consider using the relative position of
+  // the agent to the center of the grid or to the nearest uncleaned tile. This
+  // can help the agent generalize better. Distance to Nearest Uncleaned Tile:
+  // Include the distance to the nearest uncleaned tile. This can provide more
+  // direct guidance for the agent. Directional Information: Instead of a flat
+  // 5x5 grid, consider encoding the state of tiles in different directions (up,
+  // down, left, right, diagonals) relative to the agent. Count of Uncleaned
+  // Tiles: Include a count or percentage of uncleaned tiles. This can give the
+  // agent a sense of overall progress. Recent Actions: Consider including the
+  // agent's last action or a short history of actions. This can help the agent
+  // learn action sequences. Encoding Cleaned State: Instead of boolean values,
+  // you could use a single integer to represent the number of cleaned tiles in
+  // each row and column.
+
   // <reward_category, reward_score>
   std::map<int, float> reward_policy_map = {
       {RewardPolicy::TILE_ALREADY_CLEANED, -5},
       {RewardPolicy::TILE_NOT_CLEANED, 5},
-      {RewardPolicy::ALL_TILES_CLEANED, 10}};
+      {RewardPolicy::ALL_TILES_CLEANED, 20}};
 
   // Get the reward based on coordinate and tile's cleaned state.
   float GetRewardFromTileState(const std::pair<int, int> &coor);

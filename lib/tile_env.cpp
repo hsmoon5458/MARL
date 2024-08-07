@@ -60,7 +60,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       if (CheckBoundaries({new_coor.first - 1, new_coor.second})) {
         new_coor.first--;
       } else {
-        reward += -3;
+        reward += -8;
       }
       break;
 
@@ -68,7 +68,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       if (CheckBoundaries({new_coor.first + 1, new_coor.second})) {
         new_coor.first++;
       } else {
-        reward += -3;
+        reward += -8;
       }
       break;
 
@@ -76,7 +76,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       if (CheckBoundaries({new_coor.first, new_coor.second - 1})) {
         new_coor.second--;
       } else {
-        reward += -3;
+        reward += -8;
       }
       break;
 
@@ -84,7 +84,7 @@ void TileEnvironment::PerformAgentAction(const std::vector<int> &actions,
       if (CheckBoundaries({new_coor.first, new_coor.second + 1})) {
         new_coor.second++;
       } else {
-        reward += -3;
+        reward += -8;
       }
       break;
 
@@ -121,7 +121,7 @@ TileEnvironment::Step(const std::vector<int> &actions,
 
   // If it reaches the max step, give large negative reward.
   if (current_step == max_step_ - 1 && !IsAllTilesCleaned()) {
-    reward += -10;
+    reward += -50;
     done = true;
   }
 
